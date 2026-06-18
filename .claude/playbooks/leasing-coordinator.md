@@ -32,6 +32,11 @@ once a tenant moves in).
 6. **Recordkeeping** — keep lead/application status and lease documents accurate;
    file the signed lease (PDF) per Aloe's naming convention.
 
+> **HOA handoff:** if the property is in an HOA, a new move-in triggers **HOA
+> tenant registration** — owned by the **dedicated registration admin/office**,
+> not the Leasing Coordinator. Flag it at move-in; the admin runs the
+> **hoa-registration** skill (see `.claude/workflows/hoa-workflow.md`).
+
 ## Reports to
 
 Reports to the **Property Manager / Owner** (Aloe PM principal). Escalates to

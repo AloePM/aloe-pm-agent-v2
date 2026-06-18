@@ -70,6 +70,17 @@ Use a consistent short property identifier (e.g. `MapleSt-204`). Use ISO dates
 - Work orders need **fast turnaround** — flag anything urgent or safety-related
   and don't let `Open` items sit.
 
+## HOA registration
+
+> Properties in an HOA require each tenant to be **registered with the HOA**.
+> This is owned by the **dedicated registration admin / office** (not the
+> Maintenance or Leasing Coordinator). Use the **hoa-registration** skill to
+> register a tenant (find requirements → submit form+lease → book the ~$25 fee →
+> save the HOA confirmation as proof), and **hoa-registration-audit** to
+> reconcile who is/ isn't registered (`HOA_Registration_Audit_v2.xlsx`). See
+> `.claude/workflows/hoa-workflow.md`. Fee booking: reimbursement /
+> "HOA dues" account / owner expense — never the tenant ledger.
+
 ## Archiving
 
 Move documents to the relevant `Archive/` subfolder **when the relationship
