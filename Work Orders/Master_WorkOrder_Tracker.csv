@@ -1,0 +1,4 @@
+WO #,Property,Unit,Date Opened,Status,Priority,Category,Reported By,Description,Assigned Vendor,Vendor Contact,Scheduled Date,Date Closed,Cost,Owner Approved,Notes
+1001,MapleSt-204,204,2026-06-17,Open,Urgent,Plumbing,Tenant,Leak under kitchen sink,Acme Plumbing,555-0142,2026-06-18,,,Pending,Tenant available after 3pm
+1002,OakwoodPlaza,,2026-06-15,In-Progress,Routine,HVAC,Inspection,Replace lobby filter,CoolAir HVAC,555-0199,2026-06-19,,,Yes,
+1003,MapleSt-204,204,2026-06-10,Closed,Routine,Electrical,Tenant,Replace hallway light fixture,BrightSpark Electric,555-0177,2026-06-12,2026-06-12,85.00,Yes,Completed; tenant confirmed
