@@ -40,11 +40,51 @@ fair-housing/legal exposure, and pricing or marketing decisions.
 
 ## Screening criteria (applied uniformly to every applicant)
 
-- **Income ≥ 3x rent** — verified gross monthly income.
-- **Credit + background** — minimum credit score; criminal/eviction history
-  reviewed.
-- **All adults apply** — every occupant 18+ submits their own application and fee.
-- **Rental history / references** — prior landlord references verified.
+_This is the single source of truth for screening standards. The
+**applications-screening** skill and all leasing skills reference this block —
+keep criteria defined here only. Published version:
+https://www.aloepm.com/rental-criteria_
+
+- **All adults apply** — every occupant **18+** submits their own application and
+  pays the **$65** application fee. **Co-applicants must all apply** before
+  processing proceeds. The fee is **never refundable.**
+- **Income ≥ 2.5x NET (take-home) rent** — verified net monthly income.
+  - Married couples and residents 18+ **may combine** income.
+  - Proof: **3 recent pay stubs** (covering ~2 months) **+ 2 months bank
+    statements**; **self-employed/retired → 6 months bank statements**. Stubs and
+    bank statements within the **last 30 days**; tax docs from the **prior year**;
+    a new-job **offer/employer letter** is accepted in place of stubs.
+  - **Housing Choice Voucher:** income requirement is **2.5x NET the tenant's
+    portion of rent, but not less than $1,500/mo**.
+  - **Co-signers may NOT be used to meet income** (AZ-only, co-signers may be
+    considered for **lower credit**; see exceptions).
+  - **Proof of move-in funds** required at time of application.
+- **Credit ≥ 550** (TransUnion; personal or averaged across applicants). Lower
+  credit may be explained **before applying** via info@aloepm.com.
+  - **Not counted against:** discharged bankruptcies, medical bills, student
+    loans, paid collections/judgments.
+  - **No credit found** (solo applicant) → applicant has **24 hours** to provide a
+    co-signer (applies via the same link).
+- **Rental history** — previous residences free of **evictions, judgments, or
+  unpaid rent**; verifiable, **non-family**; if rented outside a PM company, proof
+  of **6 months** payments via ledger/bank statements/Zelle (**no written
+  receipts**). Owning a prior residence can substitute.
+- **Criminal background** — checked for each applicant.
+- **Occupancy** — max **2 people per bedroom.**
+- **Pets** — vary by home; **non-refundable pet fee** applies; damage comes from
+  the security deposit. **No smoking** of any kind inside or in the garage.
+- **Identification** — copy of driver's license or approved photo ID.
+
+**Automatic declines:** open/active bankruptcy · any **eviction or filing in the
+last 5 years** (no exceptions) · judgments · unpaid collections from utilities or
+prior landlords · unpaid rent · invalid SSN · falsified application · qualifying
+felony in last 7 years (property/financial/violent) · registered sex offender
+(no time limit). _Applicant is given an opportunity to correct unpaid
+collections/judgments where noted._
+
+**Exception options (PM/Owner decision, never promised):** **co-signer** (AZ
+only) for lower credit; **higher security deposit** for lower income (with funds
+in bank) or lower credit.
 
 Approval authority: the coordinator **approves or denies strictly to these
 criteria**; anything that doesn't fully meet them is an **exception → escalate to
