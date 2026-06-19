@@ -11,9 +11,9 @@ the right SLA, check for escalation factors, and recommend the next action.
 ## Triage steps
 
 1. **Read the issue** — what's broken, where, and who reported it.
-2. **Landscaping, pool, or pest control? Check included services FIRST** (see
-   below) — if the service is owner-provided/included, it's **not** a tenant
-   work order: route it, don't dispatch or triage.
+2. **Landscaping, pool, or pest control? Check the Rentvine "Included Services"
+   field FIRST** (see below) — if it's marked **"Owner Responsibility,"** it's
+   **not** a tenant work order: route it, don't dispatch or triage.
 3. **Check escalation factors** (see below) — they can raise the tier.
 4. **Assign the tier** using the definitions below.
 5. **Apply the SLA** for that tier.
@@ -21,18 +21,22 @@ the right SLA, check for escalation factors, and recommend the next action.
    drove it, and a recommended next action (who to dispatch / what to do now).
 7. **If key facts are missing, STOP and ask** — never assign a tier on a guess.
 
-## Included / owner-provided services — check FIRST (landscaping · pool · pest)
+## Included Services — check FIRST (landscaping · pool · pest)
 
 Before triaging any work order for **landscaping, pool service, or pest
-control**, check the **property maintenance notes in Aptly/Rentvine** to see
-whether that service is **owner-provided or included.** If it is:
+control**, check the Rentvine **"Included Services"** field on the property. It
+lists **pest control, landscaping, and pool**, each designated either **"Tenant
+Responsibility"** or **"Owner Responsibility."**
+
+If the relevant service is marked **"Owner Responsibility,"** it is **included
+and covered** — so:
 
 - **Do NOT dispatch a separate vendor**, and **do NOT treat it as a tenant
   issue.**
 - Instead, **contact the included service provider directly** or **notify the
   owner.**
 
-Only if the service is **not** owner-provided/included do you triage it as a
+Only if the service is marked **"Tenant Responsibility"** do you triage it as a
 normal work order.
 
 ## Urgency tiers
@@ -166,8 +170,9 @@ Always include: (1) the tier, (2) a one-line justification citing the rule, and
 - **Never guess a tier on missing information** — flag the gap and ask before
   classifying.
 - **Never dispatch a vendor or treat landscaping/pool/pest as a tenant issue
-  without first checking whether the service is owner-provided/included** — if it
-  is, route to the included provider or notify the owner.
+  without first checking the Rentvine "Included Services" field** — if it's marked
+  "Owner Responsibility," it's covered: route to the included provider or notify
+  the owner.
 - **Never ask a tenant to perform an actual repair** — only simple, safe resets;
   everything else gets a vendor dispatched.
 - **Never skip shutoff instructions for a water issue, and never send them

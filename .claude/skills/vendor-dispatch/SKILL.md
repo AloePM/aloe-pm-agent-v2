@@ -41,11 +41,13 @@ Never skip this. Four things to look for, in order:
    first and wait for a response before dispatching.**
    - **Emergency exception:** dispatch immediately and notify the owner
      **simultaneously** — never wait on a reply during an emergency.
-4. **Included / owner-provided service (landscaping, pool, pest control)** — for
-   these categories, check whether the service is **owner-provided or included**
-   on the property. If it is, **do NOT dispatch a separate vendor and do NOT
-   treat it as a tenant issue** — **contact the included service provider directly
-   or notify the owner** instead.
+4. **Included Services (landscaping, pool, pest control)** — for these
+   categories, check the Rentvine **"Included Services"** field on the property
+   (each service is marked **"Tenant Responsibility"** or **"Owner
+   Responsibility"**). If the service is marked **"Owner Responsibility,"** it is
+   included and covered — **do NOT dispatch a separate vendor and do NOT treat it
+   as a tenant issue**; **contact the included service provider directly or notify
+   the owner** instead.
 
 Only after clearing this checklist do you proceed to vendor selection.
 
@@ -89,10 +91,10 @@ only") will travel.
 
 ## Dispatch steps
 
-1. **Run the pre-dispatch checklist** (above) — check Aptly maintenance notes for
-   preferred vendor, home warranty, owner-notification flag, and (for
-   landscaping/pool/pest) whether the service is owner-provided/included. Resolve
-   each before going further.
+1. **Run the pre-dispatch checklist** (above) — check the property's Aptly notes
+   and the Rentvine **"Included Services"** field: preferred vendor, home
+   warranty, owner-notification flag, and (for landscaping/pool/pest) whether the
+   service is marked "Owner Responsibility." Resolve each before going further.
 2. **Confirm the work order is complete** — it must carry the property address,
    unit, access instructions, WO #, scope of work, and the maintenance amount.
 3. **Assign the chosen vendor in Aptly.** Aptly sends the dispatch automatically.
@@ -129,8 +131,8 @@ Example:
 
 - **Never dispatch a vendor without checking the property's maintenance notes in
   Aptly first** — preferred vendor, home warranty, owner-notification flag, and
-  (for landscaping/pool/pest) whether the service is owner-provided/included are
-  checked before any vendor is selected.
+  (for landscaping/pool/pest) the Rentvine "Included Services" field ("Owner
+  Responsibility" = covered) are checked before any vendor is selected.
 - **Never manually dispatch a vendor outside Aptly** — assigning in Aptly is the
   dispatch; no separate outreach for the initial dispatch. (Emergencies are the
   one exception: assign in Aptly *and* call to confirm.)
