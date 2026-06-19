@@ -17,6 +17,13 @@ Get the right qualified vendor onto an approved work order, dispatched through
 automatically.** We do **not** manually contact the vendor (call/text/email)
 outside Aptly for the initial dispatch. Assigning in Aptly *is* the dispatch.
 
+> **Who sets the Vendor field:** dispatch fires when the **Vendor** field is set on
+> the work-order card in Aptly. **A person must set that field** — the agent can
+> recommend the vendor, prep a dispatch-ready work order, and create/log the card,
+> but the actual Aptly vendor assignment must be done by a human until we have
+> direct Aptly write access for vendor fields. Don't report a WO as "dispatched"
+> until a person has set the Vendor field.
+
 ## Pre-dispatch checklist (MANDATORY — runs BEFORE vendor selection)
 
 **Before selecting any vendor, check the property's maintenance notes in Aptly.**
@@ -42,6 +49,19 @@ Never skip this. Four things to look for, in order:
 
 Only after clearing this checklist do you proceed to vendor selection.
 
+## Repair responsibility — owner vs. tenant (check before dispatch)
+
+Confirm who's financially responsible; it sets `Tenant Financially Responsible?`
+on the WO and whether the tenant is billed. Key plumbing rules:
+
+- **Garbage disposal leaking → owner responsible.** A leaking disposal needs
+  repair/replacement; the owner pays. (Per triage's 💧 water rule, also send
+  shutoff steps + dispatch together.)
+- **Garbage disposal clog / jam → tenant responsible** (e.g. attempting to clear a
+  jam, or resetting the red overheat button — don't dispatch a vendor for these).
+- **Leaks from water or drain piping → owner responsible.**
+- When responsibility is genuinely unclear, flag it rather than guessing.
+
 ## Vendor selection
 
 1. **Preferred vendor for the trade** — use Aloe's go-to vendor for the category
@@ -53,6 +73,19 @@ Only after clearing this checklist do you proceed to vendor selection.
    vendor.
 
 The vendor must be qualified (suited/licensed) for the trade and property type.
+
+### Service-area coverage gaps
+
+Our vendor notes are routed by city, and **not every service area has assigned
+vendors.** When a property's city isn't covered by the trade's listed vendors,
+**flag it as a coverage gap** and confirm the chosen vendor actually services that
+area before assigning — don't assume a city-restricted vendor (e.g. "Maricopa
+only") will travel.
+
+- **San Tan Valley (ZIPs 85143, 85140, 85142)** — currently **no explicitly
+  assigned vendor coverage** in our notes. Treat as a coverage gap: recommend the
+  best available trade vendor with no area restriction, confirm they serve San Tan
+  Valley, and flag the gap until dedicated vendors are assigned for these ZIPs.
 
 ## Dispatch steps
 
