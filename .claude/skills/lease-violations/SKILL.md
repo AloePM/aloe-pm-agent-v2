@@ -26,9 +26,15 @@ the **Pet Acceptance form.** If approved → **$500 non-refundable pet acceptanc
 fee + pet addendum.** (See the **pets** skill.)
 
 ### Landscaping — FIRST offense
-**Warning only.** Send a **warning email** and **note on the tenant's Rentvine
-page** that the warning was sent. **Any further incident → cure notice.** Never
-issue a cure on a first-offense landscaping violation.
+**First, confirm landscaping is the tenant's responsibility.** Check the property
+maintenance notes for whether landscaping is **owner-provided / included.** If it
+is owner-provided, the violation is **not the tenant's** — **route it to the
+landscaping vendor or notify the owner**, and do **not** warn or fine the tenant.
+
+If landscaping **is** the tenant's responsibility: **warning only** on a first
+offense — send a **warning email** and **note on the tenant's Rentvine page**
+that the warning was sent. **Any further incident → cure notice.** Never issue a
+cure on a first-offense landscaping violation.
 
 ### Smoking
 **Fine per the lease.** Smoking is prohibited in the premises — **includes vaping
@@ -70,3 +76,5 @@ on the **Lease page** — and keep the **Aptly card** updated.
 - **Never skips creating the Aptly card.**
 - **Never issues a cure for a first-offense landscaping violation — warning
   only.**
+- **Never issues a landscaping violation to a tenant without first confirming
+  landscaping is their responsibility** (not owner-provided/included).

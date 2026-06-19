@@ -20,7 +20,7 @@ outside Aptly for the initial dispatch. Assigning in Aptly *is* the dispatch.
 ## Pre-dispatch checklist (MANDATORY — runs BEFORE vendor selection)
 
 **Before selecting any vendor, check the property's maintenance notes in Aptly.**
-Never skip this. Three things to look for, in order:
+Never skip this. Four things to look for, in order:
 
 1. **Owner's preferred vendor** — if a preferred vendor is listed on the property,
    **use that vendor first, regardless of our standard vendor list.** It overrides
@@ -34,6 +34,11 @@ Never skip this. Three things to look for, in order:
    first and wait for a response before dispatching.**
    - **Emergency exception:** dispatch immediately and notify the owner
      **simultaneously** — never wait on a reply during an emergency.
+4. **Included / owner-provided service (landscaping, pool, pest control)** — for
+   these categories, check whether the service is **owner-provided or included**
+   on the property. If it is, **do NOT dispatch a separate vendor and do NOT
+   treat it as a tenant issue** — **contact the included service provider directly
+   or notify the owner** instead.
 
 Only after clearing this checklist do you proceed to vendor selection.
 
@@ -52,8 +57,9 @@ The vendor must be qualified (suited/licensed) for the trade and property type.
 ## Dispatch steps
 
 1. **Run the pre-dispatch checklist** (above) — check Aptly maintenance notes for
-   preferred vendor, home warranty, and owner-notification flag. Resolve each
-   before going further.
+   preferred vendor, home warranty, owner-notification flag, and (for
+   landscaping/pool/pest) whether the service is owner-provided/included. Resolve
+   each before going further.
 2. **Confirm the work order is complete** — it must carry the property address,
    unit, access instructions, WO #, scope of work, and the maintenance amount.
 3. **Assign the chosen vendor in Aptly.** Aptly sends the dispatch automatically.
@@ -89,8 +95,9 @@ Example:
 ## NEVER do this
 
 - **Never dispatch a vendor without checking the property's maintenance notes in
-  Aptly first** — preferred vendor, home warranty, and owner-notification flag
-  are checked before any vendor is selected.
+  Aptly first** — preferred vendor, home warranty, owner-notification flag, and
+  (for landscaping/pool/pest) whether the service is owner-provided/included are
+  checked before any vendor is selected.
 - **Never manually dispatch a vendor outside Aptly** — assigning in Aptly is the
   dispatch; no separate outreach for the initial dispatch. (Emergencies are the
   one exception: assign in Aptly *and* call to confirm.)
