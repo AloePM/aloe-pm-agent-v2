@@ -1,0 +1,12 @@
+{
+  "name": "mae-cfo-agent",
+  "version": "1.0.0",
+  "description": "Mae — Aloe PM CFO Agent for Randi",
+  "main": "mae.js",
+  "scripts": {
+    "start": "node mae.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.17.0"
+  }
+}
