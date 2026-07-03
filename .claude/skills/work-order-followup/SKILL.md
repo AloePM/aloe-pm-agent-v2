@@ -28,9 +28,14 @@ arrival window.
 The **next business day** after the appointment, confirm the job actually got
 done. (For an **Emergency**, verify the **same day** the vendor reports done —
 don't wait for the next business day.)
-- **From the vendor:** work completed, notes, and final cost.
+- **From the vendor:** work completed, notes, final cost, and **a photo of
+  the completed work** (before/after where relevant). Do not close without
+  vendor confirmation.
 - **From the tenant:** the issue is actually resolved and they're satisfied.
-- **Notify the owner** if the cost or situation warrants it.
+  A quick text check-in is enough — one question, not a survey.
+- **Notify the owner** if the final cost exceeded the authorization limit,
+  if the scope changed from what was originally described, or if the issue
+  was larger than expected.
 - Only then update status to **Closed** in the tracker and the work-order
   filename.
 
@@ -44,6 +49,10 @@ When a follow-up surfaces a problem, act — don't just log it:
   backup vendor.
 - **Issue has worsened** → re-run the **work-order-triage** skill to set a new
   urgency before proceeding.
+- **Vendor unreachable / no-show** → follow the vendor silence ladder in the
+  **escalation** skill (Emergency = escalate after 1 hour; Urgent = end of
+  business day; Routine = 2 business days). Do not silently re-queue — escalate
+  to the PM so a backup vendor can be assigned.
 
 ## Good output looks like
 
