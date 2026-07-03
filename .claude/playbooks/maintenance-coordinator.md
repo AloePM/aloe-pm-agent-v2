@@ -62,7 +62,8 @@ These require a vendor regardless of troubleshooting outcome. Assign in Aptly ri
 | Microwave not working | Appliance |
 | Garage door not working | Garage doors |
 | Ceiling fan not working | General/Electrical |
-| Irrigation or sprinkler issue | Landscaping |
+| Irrigation or sprinkler issue | Landscaping — troubleshoot-first (automated email instructs tenant to shut off irrigation valve to prevent damage while vendor is arranged) |
+| Irrigation or sprinkler (troubleshoot step sent) | Landscaping — wait for tenant to confirm shutoff, then dispatch |
 | Landscaping (included service) | Check Rentvine first — may be owner-covered |
 | Roofing | Roofing |
 | Electrical (panel, wiring, sparking) | Electrical |
