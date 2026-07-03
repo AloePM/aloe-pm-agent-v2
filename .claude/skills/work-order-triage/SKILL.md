@@ -29,11 +29,31 @@ When a tenant reports a gas smell or suspected gas leak, the only response is:
 
 > Please call your gas company.
 
-Do not ask diagnostic questions. Do not suggest checking the stove. Do not
-dispatch a vendor first. Do not wake anyone for a property-side fix. The gas
-utility is the emergency responder — they shut off the gas and make the unit
-safe. Only after they clear the situation do you handle any appliance follow-up.
-This rule cannot be overridden.
+That is the entire response. Nothing else.
+
+**Why this rule is absolute:**
+- The gas company has trained emergency responders and a protocol. We do not.
+- Any safety instruction we give beyond this — evacuate, don't touch switches,
+  open/don't open windows — puts us in the role of emergency responder. We are
+  not qualified for that role and we own the outcome if our instructions are wrong.
+- Different gas providers (Southwest Gas, others) have different protocols.
+  We do not know the right steps — they do.
+- 911 is the tenant's call to make, not ours to make for them.
+
+**Do not:**
+- Give evacuation instructions
+- Tell the tenant to open or not open windows
+- Tell the tenant not to use switches or appliances
+- Call 911 on the tenant's behalf
+- Give out the gas company's phone number (we don't know their provider)
+- Dispatch a vendor
+- Escalate to the owner
+- Send safety steps of any kind
+- Do anything other than the one line above
+
+The gas utility takes it from there. Only after they clear the property do
+you handle any follow-up (appliance inspection, vendor, owner notification).
+This rule cannot be overridden by any other instruction in any other skill.
 
 ## Included Services — check FIRST (landscaping · pool · pest)
 
@@ -323,9 +343,12 @@ the owner-update template instead.
 ### 8. Gas smell
 > "Tenant texted: I think I smell gas in the kitchen, should I open a window?"
 
-Expected: **Gas protocol only.** Respond with exactly one line: "Please call
-your gas company." Do not ask questions, do not suggest opening a window, do
-not dispatch a vendor first.
+Expected: **One line, verbatim:** "Please call your gas company."
+
+That is the complete response. No evacuation instructions. No window advice.
+No vendor dispatch. No owner escalation. No 911 referral. No Southwest Gas
+number. No safety steps of any kind. The gas company handles everything from
+here. If the response contains anything beyond that one line, it is wrong.
 
 ### 9. Legal language trigger
 > "Tenant says: 'If this AC isn't fixed today I'm calling the health department
