@@ -66,6 +66,36 @@ on the WO and whether the tenant is billed. Key plumbing rules:
 
 ## Vendor selection
 
+### Route on the actual problem, not the keyword
+Before picking a trade, confirm what the issue actually is. The words a
+tenant uses are a starting point, not a diagnosis:
+
+- "Hole in the wall next to the outlet" → **handyman/drywall**, not electrical
+  (the outlet works; the wall is damaged).
+- "Breaker keeps tripping" → could be one failing appliance, not a wiring fault.
+  Identify the cause before assigning an electrician.
+- Disposal humming but not spinning → **handyman reset**, not a plumber.
+
+Routing on the keyword instead of the actual problem is the most common way
+to send the wrong vendor. When the trade is genuinely unclear, ask one
+clarifying question or request a photo before dispatching.
+
+### Vendor hierarchy — cost-saving routing order
+Try the lower-cost option first when the scope genuinely fits:
+
+1. **Handyman** — use for minor repairs, drywall, cabinet/door hardware,
+   painting, basic appliance resets, and any task that doesn't require a
+   license. Handyman-first saves the owner money and is often faster.
+2. **Licensed specialist** (plumber, electrician, HVAC tech) — use when
+   the job requires a license, a permit, or trade-specific expertise the
+   handyman can't provide.
+3. **Specialty vendor** (roofing, foundation, restoration) — use when the
+   scope is beyond a licensed generalist.
+
+When in doubt whether a handyman can handle it: ask the handyman. They'll
+tell you if it needs a licensed trade.
+
+### Selecting the specific vendor
 1. **Preferred vendor for the trade** — use Aloe's go-to vendor for the category
    (plumbing, HVAC, electrical, appliance, general, etc.).
 2. Weigh **proximity / availability** and **cost / estimate** — closest and
