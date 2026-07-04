@@ -207,14 +207,36 @@ Use this framework:
 Document the recommendation rationale in Rentvine notes including photo, issue summary, age, and recommendation.
 
 ### Appliance leak protocol
-When an appliance is confirmed leaking:
-1. Have tenant locate the model number.
-2. Instruct tenant to check for leaking around the shutoff valve and water supply line.
-3. If found — instruct tenant to shut off the water supply valve immediately.
-4. If no leak found:
-   - **Refrigerator** — turn off ice maker (switch inside freezer or raise control arm) and do not use water dispenser.
-   - **Washing machine** — do not use until repaired.
-5. Dispatch vendor immediately alongside shutoff instructions.
+
+**Step 1 — Determine where the leak is coming from before picking a vendor:**
+- Ask the tenant: is the leak coming from the supply lines/valves behind or under the machine, or from the appliance itself (door seal, drum, internal hose)?
+- **Supply line / shutoff valve leak** → handyman (Viatone or Easy Clean) — this is a plumbing repair, not an appliance repair.
+- **Appliance itself leaking** → appliance tech (J&G Appliance / Joe) — but only after confirming age (see below).
+
+**Step 2 — Check age before dispatching any tech:**
+- If the appliance is **7 years old or older** → consider recommending replacement rather than repair. Use judgment based on:
+  - **Age** — 7+ years is the threshold to evaluate carefully
+  - **Appliance type** — some appliances (refrigerators, washers) have longer useful lives than others (dishwashers, disposals)
+  - **Model/brand** — higher-end models may be worth repairing longer; builder-grade units less so
+  - **Condition** — photos from the work order or zInspector will show wear, rust, or prior damage
+  - **Repair cost** — if repair estimate exceeds 50% of replacement cost, recommend replacement regardless of age
+- Get model/serial number first (Step 3 below), determine age and condition, then decide.
+
+**Step 3 — Get model/serial number (check these sources in order):**
+1. **Rentvine custom fields** — check Appliances section first.
+2. **zInspector** — inspection photos often show model/serial number stickers. Check before asking the tenant.
+3. **Tenant request** — if not found in either system, ask tenant for a photo of the sticker (usually inside door frame or on back panel).
+
+**Step 4 — Shutoff instructions (send immediately alongside dispatch):**
+- Instruct tenant to shut off the water supply valves behind the washing machine.
+- If no valve is accessible — do not use the machine until repaired.
+- **Refrigerator** — turn off ice maker (switch inside freezer or raise control arm) and do not use water dispenser.
+
+**Step 5 — Dispatch:**
+- Confirm home warranty first before assigning any Aloe vendor.
+- If supply line/valve: dispatch **Viatone** (primary plumber, valley-wide) or **Easy Clean** (Maricopa).
+- If appliance itself and under 10 years: dispatch **J&G Appliance (Joe)**.
+- If appliance is 7+ years and condition/cost warrants it: contact owner with recommendation to replace — include photo, age, appliance type, and repair vs replacement cost comparison.
 
 ### Standard water usage rates (for leak assessment)
 - Showers: 2.5 gallons/minute
