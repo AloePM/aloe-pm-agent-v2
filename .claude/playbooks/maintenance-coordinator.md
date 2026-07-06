@@ -644,6 +644,29 @@ For Stuart Neely properties: ALWAYS use AC Rangers for HVAC.
 
 ---
 
+## AC tune-ups and seasonal HVAC checks
+
+AC tune-ups and preventive HVAC checks are done in **fall and spring** — not summer or winter.
+
+- **Fall** (Oct–Nov) — check heating system before winter
+- **Spring** (Mar–Apr) — check AC/cooling before summer heat
+
+### Scheduling rules
+- If an owner requests a tune-up during **summer or winter** — acknowledge the request, note it, but assign **low priority**. Emergencies always come first during peak seasons.
+- If an owner requests a tune-up during **fall or spring** — schedule normally with Mac's Heating & Cooling (primary) or owner's preferred vendor.
+
+### Recurring seasonal program
+If an owner wants automatic seasonal tune-ups every year:
+1. Note on the account in Rentvine/Aptly that they are enrolled in the seasonal HVAC program.
+2. Create recurring work orders for fall and spring each year.
+3. Use **Mac's Heating & Cooling** unless the owner has provided their own preferred HVAC vendor.
+4. If owner has a preferred vendor — onboard them per the owner-preferred vendor process (insurance, W-9, communication standards).
+
+### Tenant-reported AC issues during summer
+These are never low priority — see the emergency triage rules. Seasonal tune-ups are preventive maintenance; a broken AC in Arizona summer is always Emergency or Urgent.
+
+---
+
 ## Key rules to always follow
 
 - **Vendor calls tenant** — we never promise a time to the tenant
