@@ -77,6 +77,11 @@ These issues are commonly self-resolved with simple steps. Send troubleshooting,
 | Thermostat not responding | Replace batteries, check breaker |
 | Washer not starting | Check door latch, reset |
 
+### Garbage disposal routing
+- **Outside Maricopa** — primary: **CrossRoads Remodeling AZ (Matthew)** or **Hendershot Construction**
+- **Maricopa** — primary: **Easy Clean**, 2nd option: **CrossRoads Remodeling AZ**
+- Garbage disposals are troubleshoot-first (reset button check) before dispatching
+
 ### No matching issue type — default rule
 If the issue does not match any issue type in Aptly (no troubleshooting email exists for it), or if the issue type is clearly a physical/mechanical repair with no tenant self-fix possible:
 - **Do not wait for troubleshooting** — there are no steps to send
@@ -525,147 +530,223 @@ Use these to evaluate vendor quotes. If a quote exceeds the "Usually Too High" t
 
 ## Vendor directory — who to assign by trade
 
-Always check the property's city/zone before selecting a vendor.
-Always check Aptly maintenance notes for owner preferred vendor or home warranty first.
-For Stuart Neely properties: ALWAYS use AC Rangers for HVAC.
+Always check the property zone before selecting a vendor.
+Always check Aptly/Rentvine for owner preferred vendor or home warranty first.
+**Stuart Neely properties: ALWAYS use AC Rangers for HVAC — no exceptions.**
 
-### General Maintenance / Handyman
-| Vendor | Zone | Notes |
-|---|---|---|
-| Easy Clean (Ana & Jose) | Maricopa only | Minor maintenance, light painting, basic plumbing (disposals, drains, shower repairs, toilet tank parts). No roofing, pool, electrical, garage springs. Confirm scope first. |
-| John | Chandler, Gilbert, Tempe, Mesa (East Valley) | Minor maintenance, light painting, basic plumbing. No roofing, pool, electrical, garage springs. Confirm scope first. |
+### General Maintenance
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Easy Clean | Ana & Jose |  | Maricopa | Confirm scope of work before assigning. 3-day service window for cleaning. Also primary cleaner in Maricopa. No: Roofing, Pool/Spa, Electrical (except basic outlet/breaker), Garage springs. |
+| CrossRoads Remodeling AZ | Matthew | +17145830236 | Valley-wide | 2nd option for city of Maricopa if easy Clean can't do it. 2nd option to what Viatone can't do. |
+| Hendershot Construction |  | +14803758969 | Valley-wide | Goes everywhere |
+| John |  |  | Chandler, Gilbert, Tempe, Mesa | East Valley only — Chandler, Gilbert, Tempe, Mesa. Confirm scope before assigning.  No: Roofing, Pool/Spa, Electrical, Garage springs. |
 
 ### Plumbing
-| Vendor | Zone | Notes |
-|---|---|---|
-| Viatone LLC | Valley-wide | Primary plumber. Use for ALL water heater leaks regardless of city. |
-| Easy Clean (Maricopa) | Maricopa | 2nd option if Viatone too busy. Ph: +17082892907 |
-| JB Water & Air | Valley-wide | $250 extra for Maricopa — ask if they'll waive it. Only use if Easy Clean can't handle in Maricopa. |
-
-### HVAC
-| Vendor | Zone | Notes |
-|---|---|---|
-| Mac's Heating & Cooling | Valley-wide | Primary HVAC vendor. Contact: Mike (owner), Amanda (bookkeeping). |
-| AC Rangers | Valley-wide | ALWAYS use for Stuart Neely properties. 2nd option in Maricopa. |
-| 911 Air | Valley-wide | Last resort only. |
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Viatone LLC |  |  | Valley-wide | Primary plumber valley-wide. Also 2nd option for Maricopa if Easy Clean is too busy. Use for ALL water heater's leaking regardless of city. |
+| Easy Clean Maricopa |  | +17082892907 | Maricopa | If emergency on weekend or anytime and no one else, you can reach out to ask if they can take care of issue and how much outside of Maricopa. |
+| CrossRoads Remodeling AZ |  | +17145830236 | Valley-wide | Great for faucets, garbage disposal, valves, toilet issues. |
+| Hendershot Construction |  | +14803758969 | Valley-wide |  |
+| JTB Plumbing LLC |  | +16024343641 | Valley-wide | Will match Viatone pricing, he is referral from Viatone and will go anywhere in valley. Does major plumbing too and licensed. |
+| JB Water & Air |  |  | Valley-wide | Charges $250 extra for Maricopa — ask if they will waive if they do the work. Try to get approval beforehand. Only use if Easy Clean cannot handle in Maricopa. ⚠️ $250 extra for Maricopa — ask to waive. |
 
 ### Roofing
-| Vendor | Zone | Notes |
-|---|---|---|
-| Superhero Roofing (Torsten) | Valley-wide | Primary. Licensed. Requires follow-up after assigning. |
-| Legacy Roofing (Blake) | Valley-wide | 2nd option. Licensed. |
-| Easy Clean | Maricopa only | Minor work only (fallen tiles). Unlicensed — not for major repairs. |
-| iRoof | Valley-wide | 3rd option. |
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Easy Clean | Ana & Jose |  | Maricopa | Unlicensed — minor work only (fallen tiles). Maricopa only. No: Major repairs, Licensed work. ⚠️ Unlicensed. |
+| Superhero Roofing | Torsten |  | Valley-wide | Requires follow-up after assigning. licensed ⚠️ Follow up after assigning. |
+| Legacy Roofing | Blake |  | Valley-wide | licensed |
+| iRoof |  |  | Valley-wide | licensed |
+
+### HVAC
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Mac's Heating & Cooling | Mike (owner), Amanda (bookkeeping) |  | Valley-wide | Primary HVAC vendor valley-wide. |
+| AC Rangers |  |  | Valley-wide | ALWAYS use on Stuart Neely properties — he is a part owner. 2nd option in Maricopa ⚠️ ALWAYS use for Stuart Neely properties. |
+| 911 Air |  |  | Valley-wide | Last resort only. |
 
 ### Garage Doors
-| Vendor | Zone | Notes |
-|---|---|---|
-| 007 Garage | Valley-wide (not Maricopa/Casa Grande) | Will NOT go to Maricopa or Casa Grande unless job is worth it — ask first. |
-| CopaGrande | Maricopa, Casa Grande | Expensive. |
-| Lifted High | Maricopa | Priority 3. |
-| Rottmann Garage Doors LLC | East Valley | Ph: +16028816436 |
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| 007 Garage |  |  | Valley-wide | Will NOT go to Maricopa or Casa Grande unless the job is worth it and preapproved— ask first before assigning. |
+| CopaGrande |  |  | Maricopa, Casa Grande | Expensive. |
+| Lifted High |  |  | Maricopa | Maricopa-based. More expensive. |
+| Rottmann Garage Doors LLC |  | +16028816436 | East Valley |  |
 
-### Landscaping / Irrigation / Sprinklers
-| Vendor | Zone | Notes |
-|---|---|---|
-| Sunset Saguaro's Landscaping | East Valley, Phoenix, Scottsdale, San Tan Valley, Queen Creek, Ahwatukee, Mesa, Tempe, Gilbert, Chandler | Primary East Valley. Ph: +14809423725 |
-| Sunrise Landscaping | Maricopa only | Primary Maricopa. Handles irrigation, trees, sprinklers. |
-| Rain or Shine Landscaping | Valley-wide | 2nd for Maricopa. Gets behind — be proactive with follow-up. |
-| R&M Landscaping | West Valley, Phoenix, Valley-wide | Ph: +16027772492 |
+### Landscaping
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Sunrise Landscaping |  |  | Maricopa | Maricopa only. |
+| Sunset Saguaro's Landscaping LLC |  | +14809423725 | East Valley, Phoenix, Scottsdale, San Tan Valley, Queen Creek, Ahwatukee, Mesa, Tempe, Gilbert, Chandler |  |
+| Rain or Shine Landscaping |  |  | Valley-wide | 2nd choice for Maricopa  Gets behind and work orders sometimes take time to close. Does a lot of our homes where landscaping is included |
+| R&M Landscaping |  | +16027772492 | West Valley, Phoenix, Valley-wide |  |
 
-### Appliance Repair
-| Vendor | Zone | Notes |
-|---|---|---|
-| J&G Appliance (Joe) | Valley-wide | Primary. Also known as Joe Appliance. |
-| Affordable Appliance Repair | Valley-wide | Ph: +14809143381 |
-| Phoenix Appliance Works | Valley-wide | Ph: +16028007468 |
-| Jeff Appliance Repair | Casa Grande area | Ph: +15204311234 |
-| Felix Appliance Repair | Valley-wide | Ph: +14804868900 |
-
-### Pest Control
-| Vendor | Zone | Notes |
-|---|---|---|
-| T2 Pest Control | Valley-wide | Primary for termites, bees, rodents, gophers, one-time spray. |
-| AZ Bug Guy | Maricopa, Casa Grande | Good for 1x sprays and included pest control plans. |
-| Hunter Pest Control | Valley-wide | DO NOT use for one-time sprays. |
-| Budget Bro's Termite | Valley-wide | Termites only. |
-
-### Electrical
-| Vendor | Zone | Notes |
-|---|---|---|
-| Hendershot Construction | Valley-wide | Priority 1. Ph: +14803758969 |
-| JM Electrical | Valley-wide | Priority 2. Ph: +18188572645 |
-
-### Mailbox Keys
-| Vendor | Zone | Notes |
-|---|---|---|
-| JK Postal | Valley-wide | Primary. Ph: +16023329380 |
-| Express Mailbox | Valley-wide | 2nd option. Ph: +14804404424 |
-
-### Glass / Window Repair
-| Vendor | Zone | Notes |
-|---|---|---|
-| Lizard Heights | Valley-wide | Primary. |
-| Sommers Glass | Valley-wide | Ph: +15208367763 |
+### Carpet Services
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Castellanos CleanPro & Restoration LLC |  |  | Maricopa, Casa Grande |  |
+| East Valley Carpet Cleaners |  |  | East Valley | East Valley areas: Chandler, Gilbert, Mesa, Tempe, Ahwatukee, Queen Creek, San Tan Valley. |
+| Sean Floorsmith |  |  | Maricopa, Valley-wide | Also listed under Flooring. |
+| Network Carpet |  | +14808449755 | Valley-wide |  |
 
 ### Flooring
-| Vendor | Zone | Notes |
-|---|---|---|
-| Sean Floorsmith | Valley-wide | Primary. Also does carpet stretching/repairs. |
-| Puckett's Flooring | Valley-wide | Accepts credit cards. |
-| Juan's Painting & Repairs | Valley-wide | Primarily vinyl plank. |
-
-### Carpet Cleaning
-| Vendor | Zone | Notes |
-|---|---|---|
-| East Valley Floor Care | East Valley, Scottsdale, Tempe, Mesa, San Tan Valley, Queen Creek, Ahwatukee, Gilbert, Chandler | Ph: +14803401187 |
-| Castellanos CleanPro | Casa Grande, Maricopa | Ph: +15202807161 |
-| Network Carpet | Valley-wide, West Valley, Phoenix | Ph: +14808449755 |
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Sean Floorsmith |  |  | Valley-wide | Based out of Maricopa |
+| Puckett's Flooring |  |  | Valley-wide | Accepts credit cards. |
+| Juan's Painting & Repairs |  |  | Valley-wide | Primarily for vinyl plank. Also primary painter for Maricopa. |
 
 ### Painting
-| Vendor | Zone | Notes |
-|---|---|---|
-| Juan's Painting & Repairs | Maricopa only | Primary Maricopa painter. |
-| Jacobo Gomez | Valley-wide | Goes all over the valley. |
-| Bigelow's Painting | Valley-wide | $1.30/sq ft. Poor communication — be proactive with follow-up. |
-| Platinum Exteriors | Valley-wide | $1.00/sq ft exterior. |
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Juan's Painting & Repairs |  |  | Maricopa | Primary painter for Maricopa. Only does Maricopa |
+| Jacobo Gomez |  |  | Valley-wide | Goes all over the valley |
+| Bigelow's Painting |  |  | Valley-wide | $1.30/sq ft. Communication is poor — be proactive with follow-up. Goes all over the valley ⚠️ Poor communication — follow up proactively. |
+| JE Elite Cleaning |  | +16239864055 | Valley-wide | pain touch ups |
+| Royalty Brush Painting |  | (480) 235-5904 | Valley-wide | Goes all over the valley |
+| Platinum Exteriors |  | (928) 301-5529 | Valley-wide | $1.00/sq ft exterior. This is why they are priority, otherwise interior is last backup |
+| CrossRoads Remodeling AZ |  | +17145830236 | Valley-wide | Does touch up painting for unit turns and drywall. Use primarily for touch ups and smaller jobs, quote on bigger. He is based in Maricopa, ask if he will charge more if job is further out like West Side or Central Phx. |
+
+### Cleaning
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Easy Clean | Ana & Jose |  | Maricopa | 3-day service window. |
+| JE Elite Cleaning |  |  | Valley-wide | Backup for Maricopa. Priority for all other locations. May need to send back — first cleaning not always sufficient. |
+
+### Appliance Repair
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| J&G Appliance | Joe |  | Valley-wide | Also known as Joe Appliance. |
+| Affordable Appliance Repair |  | +14809143381 | Valley-wide |  |
+| Phoenix Appliance Works |  | +16028007468 | Valley-wide |  |
+| The Appliance Repair Professionals |  | +18555128222 | Valley-wide |  |
+| Jeff Appliance Repair |  | +15204311234 | Valley-wide | Casa Grande based |
+| Felix Appliance repair |  | +14804868900 | Valley-wide |  |
+
+### Pest Control
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| AZ Bug Guy |  |  | Maricopa, Casa Grande | Good for 1x sprays and included pest control plans. |
+| T2 Pest Control |  |  | Valley-wide | Use everywhere, primary for termites, bees, rodents, gophers, one time spray, but 2nd choice in Maricopa for 1x spray. |
+| Hunter Pest Control |  |  | Valley-wide | DO NOT use for one-time sprays. No: One-time sprays. |
+| Budget Bro's Termite |  |  | Valley-wide |  |
+| Green Machine Pest Control |  |  | Valley-wide |  |
+
+### Glass Repair
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Lizard Heights |  |  | Valley-wide |  |
+| Sommers Glass |  | +15208367763 | Valley-wide |  |
+| Sonoran Glass |  | +16028990047 | Valley-wide |  |
+| Universal Glass |  | +14808332928 | Valley-wide |  |
+
+### Trash Removal
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Hendershot Construction |  | +14803758969 | Valley-wide |  |
+| Arizona Trash Pirate |  | +15204507558 | Valley-wide |  |
+| Rain or Shine Landscaping |  | +16026950948 | Valley-wide |  |
+| Valet Verde |  | +14808233364 | Valley-wide |  |
+
+### Septic Plumbing
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| A-Z Septic |  | +16025092017 | Valley-wide |  |
+| Sunrise Plumbing Contractors, LLC |  | +16235216654 | Valley-wide |  |
+| AAA Ajax Pumping |  | +16022780075 | Valley-wide |  |
+| Ameripump |  | +14803190073 | Valley-wide |  |
+
+### Carpet Cleaning
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Castellanos CleanPro & Restoration LLC |  | +15202807161 | Casa Grande, Maricopa |  |
+| East Valley Floor Care |  | +14803401187 | East Valley, Scottsdale, Tempe, Mesa, San Tan Valley, Queen Creek, Ahwatukee, Gilbert, Chandler |  |
+| Network Carpet |  | +14808449755 | Valley-wide, West Valley, Phoenix |  |
+
+### Electrical
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Hendershot Construction |  | +14803758969 | Valley-wide |  |
+| Easy Clean Maricopa |  | +17082892907 | Maricopa | Maricopa, unlicensed and will let you know if electrician is needed. |
+| JM Electrical |  | +18188572645 | Valley-wide |  |
+| Maricopa Electric |  | +14803104985 | Maricopa |  |
+| Mr Electric |  | +14803767248 | Valley-wide |  |
+
+### Drywall
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Juan's Painting and Repairs |  | +16233400898 | Maricopa |  |
+| CrossRoads Remodeling AZ |  | +17145830236 | Valley-wide |  |
+| Easy Clean Maricopa |  | +17082892907 | Maricopa |  |
+| Jacobo Gomez |  | +16026892468 | Valley-wide |  |
+| Bigelow's Painting & Remodeling LLC |  | +14803812944 | Valley-wide |  |
+
+### Mold
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Advanced Environmental Solutions, LLC |  | +16026218594 | Valley-wide |  |
+
+### Water Remediation
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Easy Clean Maricopa |  | +17082892907 | Maricopa | Call first for Maricopa to access |
+| ALL-IN Ventures Inc. 1-800 WATER DAMAGE of Phoenix |  | +16027152225 | Valley-wide |  |
+| Castellanos CleanPro & Restoration LLC |  | +15202807161 | East Valley |  |
+| Nautilus Water and Mold Damage |  | +13032106999 | Valley-wide |  |
+
+### Pool Service
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Maricopa Pool Marshall |  | +15202134393 | Maricopa |  |
+| Vitality Pool Restoration Services |  | +16023973686 | East Valley |  |
+| CoolTimes |  | +14807098891 | East Valley |  |
+
+### Pool Remodel or Restoration
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Cool View Pools |  | +16024348774 | Valley-wide | Fixes pool surfaces, pool features, cracks, etc. |
+
+### Fireplace and Chimney
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Honest Abe's Chimney Cleaning, LLC |  | +14806655335 | Valley-wide |  |
+
+### HVAC Duct Cleaning
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Honest Abe's Chimney Cleaning, LLC |  | +14806655335 | Valley-wide |  |
+| Castellanos CleanPro & Restoration LLC |  | +15202807161 | East Valley |  |
+
+### Mailbox Keys
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| JK Postal |  | +16023329380 | Valley-wide |  |
+| Express Mailbox |  | +14804404424 | Valley-wide |  |
 
 ### Locksmith
-| Vendor | Zone | Notes |
-|---|---|---|
-| Parker Lock Solutions | Valley-wide | Primary. Ph: +14805774849 |
-| JT's Keys and Locks | Valley-wide | 2nd option. Ph: +16023691553 |
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| Parker Lock Solutions |  | +14805774849 | Valley-wide |  |
+| JT's Keys and Locks |  | +16023691553 | Valley-wide |  |
 
-### Septic
-| Vendor | Zone | Notes |
-|---|---|---|
-| A-Z Septic | Valley-wide | Primary. Ph: +16025092017 |
-| Sunrise Plumbing Contractors | Valley-wide | 2nd option. Ph: +16235216654 |
+### Home Warranty
+| Vendor | Contact | Phone | Zone | Notes |
+|---|---|---|---|---|
+| 2-10 Home Warranty |  |  | Valley-wide |  |
+| American Home Shield |  | +18886821043 | Valley-wide |  |
+| American Home Warranty |  | +18886169901 | Valley-wide |  |
+| Choice Home Warranty |  |  | Valley-wide |  |
+| Fidelity Home Warranty |  |  | Valley-wide |  |
+| First American Home Warranty |  | +18009923400 | Valley-wide |  |
+| Geico Home Warranty |  | +18665358768 | Valley-wide |  |
+| Home Warranty, Select |  |  | Valley-wide |  |
+| Old Republic Home Warranty |  | +18009725985 | Valley-wide |  |
+| One Guard Home Warranty |  |  | Valley-wide |  |
+| Ortega Home Improvents |  | +16024197659 | Valley-wide |  |
+| Platinum Home Warranty |  |  | Valley-wide |  |
 
----
-
-## AC tune-ups and seasonal HVAC checks
-
-AC tune-ups and preventive HVAC checks are done in **fall and spring** — not summer or winter.
-
-- **Fall** (Oct–Nov) — check heating system before winter
-- **Spring** (Mar–Apr) — check AC/cooling before summer heat
-
-### Scheduling rules
-- If an owner requests a tune-up during **summer or winter** — acknowledge the request, note it, but assign **low priority**. Emergencies always come first during peak seasons.
-- If an owner requests a tune-up during **fall or spring** — schedule normally with Mac's Heating & Cooling (primary) or owner's preferred vendor.
-
-### Recurring seasonal program
-If an owner wants automatic seasonal tune-ups every year:
-1. Note on the account in Rentvine/Aptly that they are enrolled in the seasonal HVAC program.
-2. Create recurring work orders for fall and spring each year.
-3. Use **Mac's Heating & Cooling** unless the owner has provided their own preferred HVAC vendor.
-4. If owner has a preferred vendor — onboard them per the owner-preferred vendor process (insurance, W-9, communication standards).
-
-### Tenant-reported AC issues during summer
-These are never low priority — see the emergency triage rules. Seasonal tune-ups are preventive maintenance; a broken AC in Arizona summer is always Emergency or Urgent.
-
----
 
 ## Key rules to always follow
 
