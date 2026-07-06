@@ -77,6 +77,12 @@ These issues are commonly self-resolved with simple steps. Send troubleshooting,
 | Thermostat not responding | Replace batteries, check breaker |
 | Washer not starting | Check door latch, reset |
 
+### No matching issue type — default rule
+If the issue does not match any issue type in Aptly (no troubleshooting email exists for it), or if the issue type is clearly a physical/mechanical repair with no tenant self-fix possible:
+- **Do not wait for troubleshooting** — there are no steps to send
+- **Dispatch a handyman immediately** (John for East Valley, Easy Clean for Maricopa)
+- Common examples: door won't latch, door won't close, cabinet damage, broken hardware, stuck window, damaged screen, loose railing, broken blinds
+
 ### Instant dispatch (assign vendor immediately, troubleshooting email still goes out)
 
 | Issue type | Vendor trade |
