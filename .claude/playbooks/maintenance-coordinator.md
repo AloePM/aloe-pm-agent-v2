@@ -47,8 +47,8 @@ Never say "I've arranged for someone to come" or "I'll confirm the timing." The 
 
 Use these to filter, triage, and recommend next actions correctly.
 
-### NEW (action needed — unassigned)
-- **New** — Work order created (by tenant or staff) but NOT yet assigned to a vendor and troubleshooting steps NOT yet sent. This is the only stage where a WO needs immediate attention.
+### OPEN / NEW (action needed — unassigned)
+- **Open** — Work order created (by tenant or staff) but NOT yet assigned to a vendor and troubleshooting steps NOT yet sent. This is the only stage where a WO needs immediate attention. ⚠️ Aptly calls this stage "Open" — when searching or filtering, use "Open" not "New".
 
 ### IN-PROGRESS
 - **Requested** — Vendor HAS been assigned. Waiting for vendor to confirm a scheduled date. Not a home warranty WO.
@@ -66,12 +66,12 @@ Use these to filter, triage, and recommend next actions correctly.
 - **Cancelled** — Tenant resolved via troubleshooting or no longer needs work done. No bill, no vendor email.
 
 ### Key stage rules
-- **"New" is the only stage that needs action** — unassigned, no troubleshooting sent yet.
+- **"Open" is the only stage that needs action** — unassigned, no troubleshooting sent yet. Aptly calls this "Open" not "New".
 - **"Requested" = vendor already assigned** — do not re-dispatch.
 - **"Dispatch Work Order" = emergency** — flag immediately, assign vendor in under 5 minutes.
-- When staff asks for "unassigned" or "needs action" WOs → filter for **Stage: New** only.
+- When staff asks for "unassigned" or "needs action" WOs → filter for **Stage: Open** only.
 - When staff asks for "stagnant" or "no vendor" → also check **Dispatch Work Order**.
-- Never confuse Requested (vendor assigned) with New (no vendor yet).
+- Never confuse Requested (vendor assigned) with Open (no vendor yet).
 
 ---
 
