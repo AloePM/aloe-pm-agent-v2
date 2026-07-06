@@ -208,15 +208,20 @@ Mailbox repairs are the landlord's responsibility when the mailbox is no longer 
 
 ## Appliance SOP
 
-### Step 1 — Identify issue type and send troubleshooting tips
-- Review the issue type (not cooling, not spinning, not heating, leaking).
-- Send basic troubleshooting steps based on issue type.
+### Step 1 — Identify issue type and determine if troubleshooting applies
+- Review the issue type (not cooling, not spinning, not heating, leaking, broken part).
+- **Send troubleshooting steps** for functional issues (not turning on, not heating, not draining).
+- **No troubleshooting for physical/parts issues** — if the issue is a broken rack, broken door handle, cracked drum, broken dispenser, or any physical part that needs replacement, skip troubleshooting entirely. The fix requires a part — go straight to age/model check and dispatch.
+- For dishwasher racks, broken parts, or physical damage: no troubleshooting steps exist. Proceed directly to Step 2.
 
-### Step 2 — Check Rentvine and custom fields for appliance info
-- Check the work order for photos, model number, and serial number.
-- If not in the work order, **check the custom fields under Appliances** in Rentvine — model and serial number may already be on file.
-- If both model and serial number are found → proceed to Step 4.
-- If missing → proceed to Step 3.
+### Step 2 — Check for model/serial number (in this order)
+1. **Aptly card Mirror fields** — the card may already have appliance data synced from Rentvine. Look for fields like: Mirror Refrigerator Model, Mirror Refrigerator Serial Number, Mirror Washing Machine Model Number, Mirror Dryer Model, Mirror Dishwasher, etc. Ari can read these from the card directly.
+2. **Rentvine custom fields** — check the Appliances section in Rentvine for model and serial number.
+3. **zInspector** — inspection photos often show the appliance sticker with model/serial. Check before asking the tenant.
+4. **Tenant request** — only if not found in any of the above sources.
+
+If model and serial number are found from any source → proceed to Step 4.
+If missing → proceed to Step 3.
 
 ### Step 3 — Request info from tenant
 - Send the tenant a request for:
