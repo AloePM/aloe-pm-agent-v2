@@ -97,14 +97,14 @@ These issues are commonly self-resolved with simple steps. Send troubleshooting,
 | Washer not starting | Check door latch, reset |
 
 ### Garbage disposal routing
-- **Outside Maricopa** — primary: **CrossRoads Remodeling AZ (Matthew)** or **Hendershot Construction**
+- **Outside Maricopa** — primary: **CrossRoads Remodeling AZ (Matthew)**, 2nd: **Hendershot Construction**
 - **Maricopa** — primary: **Easy Clean**, 2nd option: **CrossRoads Remodeling AZ**
 - Garbage disposals are troubleshoot-first (reset button check) before dispatching
 
 ### No matching issue type — default rule
 If the issue does not match any issue type in Aptly (no troubleshooting email exists for it), or if the issue type is clearly a physical/mechanical repair with no tenant self-fix possible:
 - **Do not wait for troubleshooting** — there are no steps to send
-- **Dispatch a handyman immediately** (John for East Valley, Easy Clean for Maricopa)
+- **Dispatch a handyman immediately** (CrossRoads Remodeling AZ (Matthew) for East Valley, Easy Clean for Maricopa)
 - Common examples: door won't latch, door won't close, cabinet damage, broken hardware, stuck window, damaged screen, loose railing, broken blinds
 
 ### Instant dispatch (assign vendor immediately, troubleshooting email still goes out)
@@ -559,7 +559,6 @@ Always check Aptly/Rentvine for owner preferred vendor or home warranty first.
 | Easy Clean | Ana & Jose |  | Maricopa | Confirm scope of work before assigning. 3-day service window for cleaning. Also primary cleaner in Maricopa. No: Roofing, Pool/Spa, Electrical (except basic outlet/breaker), Garage springs. |
 | CrossRoads Remodeling AZ | Matthew | +17145830236 | Valley-wide | 2nd option for city of Maricopa if easy Clean can't do it. 2nd option to what Viatone can't do. |
 | Hendershot Construction |  | +14803758969 | Valley-wide | Goes everywhere |
-| John |  |  | Chandler, Gilbert, Tempe, Mesa | East Valley only — Chandler, Gilbert, Tempe, Mesa. Confirm scope before assigning.  No: Roofing, Pool/Spa, Electrical, Garage springs. |
 
 ### Plumbing
 | Vendor | Contact | Phone | Zone | Notes |
