@@ -586,8 +586,8 @@ Always check Aptly/Rentvine for owner preferred vendor or home warranty first.
 ### HVAC
 | Vendor | Contact | Phone | Zone | Notes |
 |---|---|---|---|---|
-| Mac's Heating & Cooling | Mike (owner), Amanda (bookkeeping) |  | Valley-wide | Primary HVAC vendor valley-wide. |
-| AC Rangers |  |  | Valley-wide | ALWAYS use on Stuart Neely properties — he is a part owner. 2nd option in Maricopa ⚠️ ALWAYS use for Stuart Neely properties. |
+| Mac's Heating & Cooling | Mike (owner), Amanda (bookkeeping) | (480) 203-9689 | Valley-wide | Primary HVAC vendor valley-wide. Use for all HVAC unless property has home warranty or is a Stuart Neely property. |
+| AC Rangers |  | (480) 818-4772 | Valley-wide | ALWAYS use on Stuart Neely properties — he is a part owner. ⚠️ ONLY required for Stuart Neely properties — NOT the default for Maricopa. |
 | 911 Air |  |  | Valley-wide | Last resort only. |
 
 ### Garage Doors
@@ -641,7 +641,7 @@ Always check Aptly/Rentvine for owner preferred vendor or home warranty first.
 ### Appliance Repair
 | Vendor | Contact | Phone | Zone | Notes |
 |---|---|---|---|---|
-| J&G Appliance | Joe |  | Valley-wide | Also known as Joe Appliance. |
+| J&G Appliance | Joe | +16029183501 | Valley-wide | Also known as Joe Appliance. Primary appliance vendor. |
 | Affordable Appliance Repair |  | +14809143381 | Valley-wide |  |
 | Phoenix Appliance Works |  | +16028007468 | Valley-wide |  |
 | The Appliance Repair Professionals |  | +18555128222 | Valley-wide |  |
