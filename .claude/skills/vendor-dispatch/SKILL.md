@@ -32,16 +32,55 @@ Never skip this. Four things to look for, in order:
 1. **Owner's preferred vendor** — if a preferred vendor is listed on the property,
    **use that vendor first, regardless of our standard vendor list.** It overrides
    the trade-preferred selection below.
-2. **Home warranty** — if the property has a home warranty, the claim **must be
+2.  **Home warranty** — if the property has a home warranty, the claim **must be
    filed through the warranty company before dispatching our own vendor.** Do not
    assign an Aloe vendor unless/until the warranty route is exhausted or doesn't
    cover the issue.
-3. **Owner notification preference** — if the property is flagged "contact owner
+
+   **Known home warranty and builder warranty companies to recognize:**
+   - First American Home Warranty
+   - American Home Shield
+   - Choice Home Warranty
+   - Home Warranty of America
+   - Old Republic Home Protection
+   - 2-10 Home Buyers Warranty
+   - American Home Warranty
+   - Builder Warranty (any new-construction coverage)
+   - Fidelity National Home Warranty
+   - Landmark Home Warranty
+   - OneGuard Home Warranty
+   - Platinum Home Warranty
+
+   If the property notes mention any of these (or any home/builder warranty),
+   set the **Home Warranty field (`3PvcEJoFBQLnjHnd6`) to `Yes`** on the Aptly
+   work order card if any of the following vendors are assigned. This flags the card so all staff know
+   the warranty route applies. Then file the claim through the warranty company
+   — do not dispatch an Aloe vendor until the warranty company assigns one or
+   confirms the issue is not covered.
+3. **Set both fields in Aptly — this is what triggers dispatch:**
+
+   **When a warranty company is handling the job:**
+   - Set `3PvcEJoFBQLnjHnd6` (Home Warranty) = **Yes**
+   - Do NOT set a vendor — card stays in current stage, no email fires
+   - File the claim through the warranty company directly
+
+   **When dispatching an Aloe vendor (no warranty, or warranty won't cover it):**
+   - Set `39gNjdkmpFpoPLzth` (Vendor) = the vendor name Ari recommended
+   - Set `3PvcEJoFBQLnjHnd6` (Home Warranty) = **No**
+   - **Both fields must be set together** — this is what moves the card to
+     "Requested" stage and fires the vendor email automatically
+   - If the property HAD a home warranty but it doesn't cover this issue,
+     Home Warranty still = **No** on this card (warranty was checked and
+     declined — the vendor is handling it)
+
+   Ari proposes the vendor name. A human confirms and sets the fields in Aptly.
+   The email and stage change happen automatically once both fields are set.
+4. **Owner notification preference** — if the property is flagged "contact owner
    before any dispatch" (applies even to Routine WOs), **text or email the owner
    first and wait for a response before dispatching.**
    - **Emergency exception:** dispatch immediately and notify the owner
      **simultaneously** — never wait on a reply during an emergency.
-4. **Included Services (landscaping, pool, pest control)** — for these
+5. **Included Services (landscaping, pool, pest control)** — for these
    categories, check the Rentvine **"Included Services"** field on the property
    (each service is marked **"Tenant Responsibility"** or **"Owner
    Responsibility"**). If the service is marked **"Owner Responsibility,"** it is
