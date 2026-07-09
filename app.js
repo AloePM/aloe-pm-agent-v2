@@ -1,8 +1,9 @@
 require('dotenv').config();
-const { loadPlaybook } = require('./loadPlaybook');
+const { loadPlaybook, savePlaybook } = require('./loadPlaybook');
 const { logActivity } = require('./logActivity');
 const { App } = require('@slack/bolt');
 const Anthropic = require('@anthropic-ai/sdk');
+const { getMcpServers } = require('./mcpConfig');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -477,6 +478,7 @@ function scheduleFollowUp() {
 // ── Start both servers ─────────────────────────────────────────────────────
 (async () => {
   SYSTEM_PROMPT = await loadPlaybook('ari', SYSTEM_PROMPT);
+  await savePlaybook('ari', SYSTEM_PROMPT);
   await slackApp.start();
   console.log('⚡ Ari is online and listening for @Ari mentions');
   scheduleFollowUp();
