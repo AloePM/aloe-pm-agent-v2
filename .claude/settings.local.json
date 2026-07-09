@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check mae.js)",
+      "Bash(pm2 restart *)",
+      "Bash(pm2 logs *)",
+      "Bash(pm2 jlist *)",
+      "Bash(node -e 'const d=JSON.parse\\(require\\(\"fs\"\\).readFileSync\\(0\\)\\);const m=d.find\\(p=>p.name===\"mae\"\\);console.log\\(\"status:\",m.pm2_env.status,\"| restarts:\",m.pm2_env.restart_time,\"| uptime\\(s\\):\",Math.round\\(\\(Date.now\\(\\)-m.pm2_env.pm_uptime\\)/1000\\)\\);')",
+      "Skill(claude-api)",
+      "Bash(timeout 120 node _mcptest.js)",
+      "Bash(npm install *)",
+      "Bash(node -e \"console.log\\('mcp sdk:', require\\('@modelcontextprotocol/sdk/package.json'\\).version\\)\")",
+      "Bash(node -e \"const {Client}=require\\('@modelcontextprotocol/sdk/client/index.js'\\); const {StreamableHTTPClientTransport}=require\\('@modelcontextprotocol/sdk/client/streamableHttp.js'\\); console.log\\('Client:',typeof Client,'Transport:',typeof StreamableHTTPClientTransport\\)\")",
+      "Bash(node *)",
+      "Bash(pm2 start *)",
+      "Bash(curl -s --max-time 5 http://127.0.0.1:3099/health)",
+      "Bash(curl *)",
+      "Bash(pm2 list *)"
+    ]
+  }
+}
