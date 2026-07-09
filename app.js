@@ -349,14 +349,11 @@ Triage this work order: classify urgency (Emergency/Urgent/Routine), identify th
           if (searchRes.status === 200 && searchRes.body.items && searchRes.body.items.length > 0) {
             const card = searchRes.body.items[0];
             const realAddress = card.address || card.title || '';
-            // Update issue type if we have one
+            // Suggest issue type — staff must confirm before setting
             if (issueType) {
-              await hubRequest('POST', `/api/aptly/cards/${card.id}`, { _id: card.id, nfEujqs3ujMNgMFom: issueType });
-              console.log(`Auto-set issue type "${issueType}" on card ${card.id} for WO #${woNumber}`);
               await slackApp.client.chat.postMessage({
                 channel: ARI_CHANNEL,
-                text: `✅ *WO #${woNumber}* — ${realAddress || address}
-Auto-set issue type: *${issueType}*`,
+                text: `💡 *WO #${woNumber}* — ${realAddress || address}\nSuggested issue type: *${issueType}*\nReply to confirm and I will update it in Aptly.`,
               });
             }
           } else {
