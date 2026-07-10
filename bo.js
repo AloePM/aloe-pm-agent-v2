@@ -1,5 +1,5 @@
 require('dotenv').config({ path: '.env.bo' });
-const { loadPlaybook } = require('./loadPlaybook');
+const { loadPlaybook, savePlaybook } = require('./loadPlaybook');
 const { logActivity } = require('./logActivity');
 const { App } = require('@slack/bolt');
 const Anthropic = require('@anthropic-ai/sdk');
@@ -167,7 +167,32 @@ const BO_TOOLS = [
       },
       required: ["reportName"]
     }
+  },
+  {
+    name: 'search_vendor',
+    description: 'Search for a vendor by name and get their contactID. Use this first before pulling vendor bills or ledger. Returns contactID, name, email, phone for matching vendors.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Vendor name or partial name to search for' }
+      },
+      required: ['name']
+    }
+  },
+  {
+    name: 'get_vendor_ledger',
+    description: 'Get all bills (paid and unpaid) for a specific vendor by their contactID. Use after search_vendor to get the full payment history. Excludes Aloe fee accounts.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        contactID: { type: 'string', description: 'Vendor contactID from search_vendor' },
+        startDate: { type: 'string', description: 'Start date YYYY-MM-DD' },
+        endDate: { type: 'string', description: 'End date YYYY-MM-DD' }
+      },
+      required: ['contactID']
+    }
   }
+
 ];
 
 async function executeTool(name, input) {
@@ -402,6 +427,142 @@ case 'get_posted_payments': {
       }));
       return JSON.stringify({ startDate, endDate, count: allPayments.length, payments: slim });
     }
+
+    case 'get_paid_bills_by_vendor': {
+      const params = { isPaid: 1, isVoided: 0, pageSize: 100 };
+      if (input.contactID) params.contactID = input.contactID;
+      if (input.startDate) params.startDate = input.startDate;
+      if (input.endDate) params.endDate = input.endDate;
+      const data = await rvFetch('/accounting/bills', params);
+      const bills = Array.isArray(data) ? data : (data.data || []);
+      const filtered = bills.filter(b => !ALOE_FEE_IDS.has(parseInt(b.chargeAccountID || 0)));
+      return JSON.stringify({ count: filtered.length, bills: filtered.slice(0, 50) });
+    }
+    case 'get_check_register': {
+      const filters = [];
+      if (input.startDate) filters.push({ name: 'datePosted', comparator: 'greaterThanOrEqualTo', value: input.startDate });
+      if (input.endDate) filters.push({ name: 'datePosted', comparator: 'lessThanOrEqualTo', value: input.endDate });
+      if (input.propertyID) filters.push({ name: 'propertyID', comparator: 'equal', value: input.propertyID });
+      const data = await rvReport('checks', filters,
+        ['checkNumber','datePosted','contactName','propertyID','amount','description','bankAccountID']
+      );
+      return JSON.stringify({ count: data.length, checks: data.slice(0, 50) });
+    }
+    case 'get_deposit_register': {
+      const filters = [];
+      if (input.startDate) filters.push({ name: 'datePosted', comparator: 'greaterThanOrEqualTo', value: input.startDate });
+      if (input.endDate) filters.push({ name: 'datePosted', comparator: 'lessThanOrEqualTo', value: input.endDate });
+      if (input.propertyID) filters.push({ name: 'propertyID', comparator: 'equal', value: input.propertyID });
+      const data = await rvReport('receipts', filters,
+        ['datePosted','contactName','propertyID','amount','description','receiptID']
+      );
+      return JSON.stringify({ count: data.length, deposits: data.slice(0, 50) });
+    }
+    case 'get_owner_ledger': {
+      const filters = [];
+      if (input.ownerID) filters.push({ name: 'ownerContactID', comparator: 'equal', value: input.ownerID });
+      if (input.propertyID) filters.push({ name: 'propertyID', comparator: 'equal', value: input.propertyID });
+      if (input.startDate) filters.push({ name: 'datePosted', comparator: 'greaterThanOrEqualTo', value: input.startDate });
+      if (input.endDate) filters.push({ name: 'datePosted', comparator: 'lessThanOrEqualTo', value: input.endDate });
+      const data = await rvReport('ownerLedger', filters,
+        ['datePosted','description','propertyID','amount','balance','transactionType']
+      );
+      return JSON.stringify({ count: data.length, entries: data.slice(0, 50) });
+    }
+    case 'run_accounting_report': {
+      const filters = [];
+      if (input.startDate) filters.push({ name: 'datePosted', comparator: 'greaterThanOrEqualTo', value: input.startDate });
+      if (input.endDate) filters.push({ name: 'datePosted', comparator: 'lessThanOrEqualTo', value: input.endDate });
+      if (input.contactID) filters.push({ name: 'contactID', comparator: 'equal', value: input.contactID });
+      if (input.propertyID) filters.push({ name: 'propertyID', comparator: 'equal', value: input.propertyID });
+      const data = await rvReport(input.reportName, filters, []);
+      return JSON.stringify({ report: input.reportName, count: data.length, rows: data.slice(0, 50) });
+    }
+
+    case 'search_vendor': {
+      const allVendors = await rvFetch('/vendors', { pageSize: 500 });
+      const vendors = Array.isArray(allVendors) ? allVendors : (allVendors.data || []);
+      const q = (input.name || '').toLowerCase();
+      const matches = vendors.filter(v => {
+        const name = (v.contact?.name || v.name || '').toLowerCase();
+        return name.includes(q);
+      }).slice(0, 20).map(v => ({
+        contactID: v.contact?.contactID || v.contactID,
+        name: v.contact?.name || v.name,
+        email: v.contact?.email || v.email,
+        phone: v.contact?.phone || v.phone
+      }));
+      return JSON.stringify({ count: matches.length, vendors: matches });
+    }
+    case 'get_vendor_ledger': {
+      const params = { contactID: input.contactID, pageSize: 100 };
+      if (input.startDate) params.startDate = input.startDate;
+      if (input.endDate) params.endDate = input.endDate;
+      const data = await rvFetch('/accounting/bills', params);
+      const raw = Array.isArray(data) ? data : (data.data || []);
+      // Fetch charges for each bill to get amounts and GL accounts
+      const bills = await Promise.all(raw.slice(0, 50).map(async r => {
+        const b = r.bill || r;
+        const c = r.contact || {};
+        // Fetch bill detail with charges
+        let charges = [];
+        let totalAmount = 0;
+        let glAccounts = [];
+        try {
+          const detail = await rvFetch('/accounting/bills/' + b.billID, { includes: 'charges' });
+          const chargeArr = Array.isArray(detail.charges) ? detail.charges : [];
+          charges = chargeArr.map(ch => ({
+            desc: (ch.transaction?.description || '').slice(0, 80),
+            amount: parseFloat(ch.transaction?.amount || 0),
+            glAccountID: ch.transaction?.chargeAccountID,
+            property: ch.property?.address || ch.unit?.address || ''
+          }));
+          totalAmount = charges.reduce((sum, ch) => sum + ch.amount, 0);
+          glAccounts = [...new Set(charges.map(ch => ch.glAccountID).filter(Boolean))];
+        } catch(e) {}
+        return {
+          billID: b.billID,
+          vendor: c.name || input.contactID,
+          billDate: b.billDate,
+          dateDue: b.dateDue,
+          reference: b.reference,
+          workOrderID: b.workOrderID,
+          totalAmount: totalAmount.toFixed(2),
+          isPaid: b.isVoided === '0' && totalAmount > 0 ? 'check charges' : 'unknown',
+          glAccounts,
+          charges,
+          isVoided: b.isVoided === '1'
+        };
+      }));
+      const sorted = bills.sort((a, b) => (b.billDate || '').localeCompare(a.billDate || ''));
+      return JSON.stringify({ contactID: input.contactID, count: raw.length, bills: sorted });
+    }
+
+
+    case 'check_vendor_duplicates': {
+      const days = input.days || 90;
+      const window_days = input.window_days || 7;
+      const hubUrl = process.env.HUB_URL || 'https://aloe-internal-hub-git-t7c5rx67tq-wn.a.run.app';
+      const resp = await fetch(`${hubUrl}/vendor-duplicate-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days, window_days }),
+        signal: AbortSignal.timeout(120000)
+      });
+      const data = await resp.json();
+      const result = data.result || data;
+      // Summarize for Bo
+      const dupes = result.duplicates || [];
+      const activeOnly = dupes.filter(d => d.bill_a?.voided !== '1' && d.bill_b?.voided !== '1');
+      return JSON.stringify({
+        period_days: result.period_days,
+        total_bills_scanned: result.total_bills_scanned,
+        duplicate_pairs_found: result.duplicate_pairs_found,
+        active_duplicates: activeOnly.length,
+        duplicates: dupes.slice(0, 30)
+      });
+    }
+
         default:
       return JSON.stringify({ error: 'Unknown tool: ' + name });
   }
@@ -480,7 +641,7 @@ app.event('app_mention', async ({ event, client, say }) => {
         max_tokens: 2048,
         system: buildSystemPrompt(),
         tools: BO_TOOLS,
-        messages: current,
+        messages: current
       });
 
       if (response.stop_reason !== 'tool_use') {
@@ -517,8 +678,10 @@ app.event('app_mention', async ({ event, client, say }) => {
     });
   }
 });
+let SYSTEM_PROMPT = buildSystemPrompt();
 (async () => {
   SYSTEM_PROMPT = await loadPlaybook('bo', SYSTEM_PROMPT);
+  await savePlaybook('bo', SYSTEM_PROMPT);
   await app.start();
   console.log('⚡ Bo is online with live Rentvine access');
 })();

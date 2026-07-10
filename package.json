@@ -7,6 +7,13 @@
     "start": "node mae.js"
   },
   "dependencies": {
-    "@slack/bolt": "^3.17.0"
+    "@anthropic-ai/sdk": "^0.110.0",
+    "@google-cloud/storage": "^7.21.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@slack/bolt": "^3.17.0",
+    "axios": "^1.18.1",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.2.0"
   }
 }

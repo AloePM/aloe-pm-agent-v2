@@ -1,8 +1,9 @@
 require('dotenv').config({ path: '.env.joe' });
-const { loadPlaybook } = require('./loadPlaybook');
+const { loadPlaybook, savePlaybook } = require('./loadPlaybook');
 const { logActivity } = require('./logActivity');
 const { App } = require('@slack/bolt');
 const Anthropic = require('@anthropic-ai/sdk');
+const { getMcpServers } = require('./mcpConfig');
 const fs = require('fs');
 const path = require('path');
 
@@ -112,6 +113,7 @@ app.event('app_mention', async ({ event, client, say }) => {
 
 (async () => {
   SYSTEM_PROMPT = await loadPlaybook('joe', SYSTEM_PROMPT);
+  await savePlaybook('joe', SYSTEM_PROMPT);
   await app.start();
   console.log('⚡ Joe is online and listening for @Joe mentions');
 })();

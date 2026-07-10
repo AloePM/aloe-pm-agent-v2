@@ -1,8 +1,9 @@
 require('dotenv').config({ path: '.env.ivy' });
-const { loadPlaybook } = require('./loadPlaybook');
+const { loadPlaybook, savePlaybook } = require('./loadPlaybook');
 const { logActivity } = require('./logActivity');
 const { App } = require('@slack/bolt');
 const Anthropic = require('@anthropic-ai/sdk');
+const { getMcpServers } = require('./mcpConfig');
 const fs = require('fs');
 const path = require('path');
 
@@ -103,6 +104,7 @@ app.event('app_mention', async ({ event, client, say }) => {
 
 (async () => {
   SYSTEM_PROMPT = await loadPlaybook('ivy', SYSTEM_PROMPT);
+  await savePlaybook('ivy', SYSTEM_PROMPT);
   await app.start();
   console.log('⚡ Ivy is online and listening for @Ivy mentions');
 })();

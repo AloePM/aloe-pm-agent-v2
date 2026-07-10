@@ -1,13 +1,15 @@
 async function loadPlaybook(agentId, fallback) {
   let prompt = fallback;
 
-  // Load playbook from GCS
+  // Only use GCS playbook if it's bigger than the local fallback
   try {
     const r = await fetch(`https://hub.aloepm.com/api/agents/playbook/${agentId}`);
     const data = await r.json();
-    if (data.exists && data.content) {
-      console.log(`[${agentId}] Playbook loaded from GCS (${data.content.length} chars)`);
+    if (data.exists && data.content && data.content.length > fallback.length) {
+      console.log(`[${agentId}] GCS playbook loaded (${data.content.length} chars > local ${fallback.length} chars)`);
       prompt = data.content;
+    } else {
+      console.log(`[${agentId}] Using local prompt (${fallback.length} chars) — GCS smaller or missing`);
     }
   } catch (err) {
     console.error(`[${agentId}] Playbook fetch failed:`, err.message);
@@ -41,3 +43,18 @@ async function loadPlaybook(agentId, fallback) {
 }
 
 module.exports = { loadPlaybook };
+
+async function savePlaybook(agentId, content) {
+  try {
+    await fetch(`https://hub.aloepm.com/api/agents/playbook-save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-agent-key': 'aloe-internal' },
+      body: JSON.stringify({ agentId, content })
+    });
+    console.log(`[${agentId}] Full prompt saved to GCS (${content.length} chars)`);
+  } catch (err) {
+    console.error(`[${agentId}] GCS save failed:`, err.message);
+  }
+}
+
+module.exports = { loadPlaybook, savePlaybook };
