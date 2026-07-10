@@ -166,7 +166,7 @@ The 90-day pipeline above is for fixed-term leases. Month-to-month leases follow
 
 - Every 6 months, all active month-to-month leases populate into the renewal board automatically.
 - Purpose: confirm with both tenant and owner that the tenant is good to continue month-to-month, and get the annual inspection done (inspections are still required annually regardless of lease type).
-- Same $150 fee and same inspection requirement apply — just without the 90-day fixed-term cadence and stages above.
+- $150 renewal admin fee does NOT apply to month-to-month 6-month check-ins — just without the 90-day fixed-term cadence and stages above.
 
 ---
 
