@@ -27,6 +27,8 @@ Starting 90 days before lease end gives enough runway to:
 
 **$150 admin fee, tenant-paid, GL description "Lease Renewal."** This is the only fee in this process. (Aloe has a separate $99 owner property management update form fee — that belongs to a different process, not renewals. Do not add it here.)
 
+**Never waived.** Payment plans/split payments are fine if a tenant needs one, but the fee itself is always charged in full — waiving it for one tenant isn't fair to the rest.
+
 ---
 
 ## Board Stages (Aptly Tenant Renewals)
@@ -38,18 +40,25 @@ Every lease 90 days from end date filters into this stage automatically.
 - Tenant gets an email with two options: renew, or move out (with move-out notice instructions). Explains a walkthrough email is coming next.
 - Owner gets an email with three options: re-list for rent (with comps), sell the home, or find a new tenant. Owner can reply directly to the email or click the button in the email to submit a structured response — either path creates an Aptly notification on the card.
 
+**Automation note:** every email in the New-stage cadence sends automatically via Aptly — nothing to trigger manually here. The one exception in the whole pipeline is renewal *scheduling* (Inspection Needs Scheduled stage), which is always manual because the system doesn't know John's actual availability by area.
+
 **Remy's job in this stage:**
 - Check card notifications and read the card directly — owners sometimes reply by email instead of using the button, so don't rely on the notification alone.
 - Auto reminders: tenant gets emails on day 1, 5, 10, 23 with a day-5 text task. Owner gets emails immediately, day 5 (+ text task), day 10, day 23.
 - If no response after 23 days (~3 weeks, getting close to the 60-day mark) — call. Use this text template for a tenant nudge:
   > "Hi! We sent you an email regarding the upcoming lease renewal and have not heard back. When you have a moment, please review it and let us know your plans by responding through the email using the link provided. Thank you!"
-- Once the owner responds with a rent rate, **fill in the proposed rent on the card.** This triggers the renewal offer letter to the tenant automatically once the card is in Inspection Scheduled or Inspection Done.
-- If the owner indicates non-renewal or an unclear situation, or the tenant's account/condition raises concern (see Non-Renewal below), stop and flag for Alexes.
+- **Inside 60 days with no owner pricing response:** email is not enough at this point — text or call the owner directly to get an answer. Don't let this drift past 60 days.
+- Once the owner responds with a rent rate, **fill in the proposed rent on the card.** This is informational only — it lets the tenant know what to expect for the new rate. It is separate from and does not replace the final e-signature renewal document sent later.
+- If the owner indicates non-renewal, or the tenant gives notice not to renew, or the tenant's account/condition raises concern (see Non-Renewal below), stop and flag for @Alexes.
 
 ### 2. INSPECTION NEEDS SCHEDULED
 Move here once ready to start scheduling walkthroughs with tenants. This stage is often the longest — start immediately.
 
-**Field tech:** John, for all properties and all regions.
+**Field tech:** John, for all properties and all regions — he does the vast majority of inspections.
+
+**Backup:** Ana (Easy Clean) covers Maricopa-area inspections only, and only when a resident needs a time outside John's hours (weekends or after 3pm). Otherwise it's always John.
+
+**Access refusal:** the annual renewal inspection is a lease requirement — a tenant cannot simply decline access. Refusing access is a lease breach. The only exception is a documented accommodation request (e.g. health-related) — those go to @Alexes to handle, not resolved by Remy.
 
 **Scheduling logic:**
 - Use the field tech schedule spreadsheet: https://docs.google.com/spreadsheets/d/1b5qlwlEo8avsSRbm2id1ocN0Eh5KmvvKPHsiEoDWngk/edit
@@ -84,7 +93,7 @@ Move here once the inspection has happened and John has submitted his report to 
 
 **Sending the renewal (Alexes confirms before send):**
 1. Fill out the full **Renewal Terms** section on the card, down through number of signers.
-2. Click the three-dot menu on the card → **New E-Signature Document** → **Tenant Renewals** → select the correct variant (1 signer, 2 signers, pool, regular lease, etc.)
+2. Click the three-dot menu on the card → **New E-Signature Document** → **Tenant Renewals** → select the correct variant. Only two document types exist: **Regular Lease** and **Pool Lease.** Month-to-month renewals use the Regular Lease document with month-to-month terms — there is no separate M2M document. Choose the signer count (1 signer, 2 signers, etc.) based on how many tenants are on the lease.
 3. **Delete the owner as a signer.** Confirm tenant names are correct.
 4. **Add Alexes as Countersigner.**
 5. Title the document with the address: `[Address] Renewal` (e.g. "123 Main St Renewal")
@@ -141,7 +150,23 @@ Work through every item in order. This is the mechanical part — Remy can execu
 
 ## Non-Renewal
 
-If a renewal looks headed toward non-renewal — owner decision, tenant payment/condition history, or a bad inspection — **stop and route to @Alexes.** Remy does not initiate a non-renewal conversation with a tenant or owner unattended.
+Non-renewal can come from either side — an owner who doesn't want to continue, or a tenant who gives notice not to renew. Either way, this stops and routes to **@Alexes.**
+
+**What Alexes does:**
+- Talks to both the owner and the tenant as needed — this isn't a one-sided decision.
+- Moves the card to the **Owner Non-Renewal** stage, which sends an email explaining next steps.
+- Follows up directly with the tenant to confirm they received the non-renewal email and understand they are not being renewed — Remy does not assume the automated email alone is sufficient confirmation.
+- **Alexes sends all non-renewal communication.** Remy never sends a non-renewal message to a tenant or owner.
+
+**Remy's job:** flag the situation clearly (property, tenant, owner, and why — payment history, condition, owner decision, tenant notice) and stop. Do not move the card to Owner Non-Renewal — that's Alexes's action.
+
+## Month-to-Month Renewals — Different Process
+
+The 90-day pipeline above is for fixed-term leases. Month-to-month leases follow a separate, shorter cycle:
+
+- Every 6 months, all active month-to-month leases populate into the renewal board automatically.
+- Purpose: confirm with both tenant and owner that the tenant is good to continue month-to-month, and get the annual inspection done (inspections are still required annually regardless of lease type).
+- Same $150 fee and same inspection requirement apply — just without the 90-day fixed-term cadence and stages above.
 
 ---
 
