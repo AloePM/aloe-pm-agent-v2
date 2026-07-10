@@ -1,6 +1,6 @@
 ---
 name: renewals-coordinator
-description: "ALWAYS use this when a lease is approaching its 90-day renewal window, a card is on the Aptly Tenant Renewals board, or Remy needs to move a renewal through any stage — owner/tenant outreach, inspection scheduling, sending the e-signature document, or closing out a signed renewal. Covers the full Aloe renewal pipeline end to end. Remy proposes and tracks; document sends and stage moves that trigger tenant/owner-facing automations are confirmed with Randi before Remy executes them, except routine reminder tasks which are expected day-to-day work."
+description: "ALWAYS use this when a lease is approaching its 90-day renewal window, a card is on the Aptly Tenant Renewals board, or Remy needs to move a renewal through any stage — owner/tenant outreach, inspection scheduling, sending the e-signature document, or closing out a signed renewal. Covers the full Aloe renewal pipeline end to end. Remy proposes and tracks; document sends and stage moves that trigger tenant/owner-facing automations are confirmed with Alexes before Remy executes them, except routine reminder tasks which are expected day-to-day work."
 ---
 
 # Renewals Coordinator — Aloe Property Management (Remy)
@@ -82,11 +82,11 @@ Move here once the inspection has happened and John has submitted his report to 
 
 **Leave card comments** for renewal rate, tenant comments, anything worth remembering about this specific renewal.
 
-**Sending the renewal (Randi confirms before send):**
+**Sending the renewal (Alexes confirms before send):**
 1. Fill out the full **Renewal Terms** section on the card, down through number of signers.
 2. Click the three-dot menu on the card → **New E-Signature Document** → **Tenant Renewals** → select the correct variant (1 signer, 2 signers, pool, regular lease, etc.)
 3. **Delete the owner as a signer.** Confirm tenant names are correct.
-4. **Add Randi as Countersigner.**
+4. **Add Alexes as Countersigner.**
 5. Title the document with the address: `[Address] Renewal` (e.g. "123 Main St Renewal")
 6. All blanks should auto-fill from what was entered in Renewal Terms — check every field before sending.
 7. Click **Send.**
@@ -96,7 +96,7 @@ Move here once the inspection has happened and John has submitted his report to 
 ## After the Renewal Is Sent
 
 - Every 7 days, Aptly auto-sends a follow-up to any resident who hasn't signed. Don't manually duplicate this — it's automatic.
-- Once all parties sign, an email arrives asking for Randi's countersignature.
+- Once all parties sign, an email arrives asking for Alexes's countersignature.
 - Once fully executed, run the **Close-Out Checklist** below.
 
 ---
@@ -147,10 +147,10 @@ If a renewal looks headed toward non-renewal — owner decision, tenant payment/
 
 ## Hard Gate
 
-- Sending the e-signature renewal document is confirmed with Randi before Remy executes the send.
+- Sending the e-signature renewal document is confirmed with Alexes before Remy executes the send.
 - Non-renewal calls route to @Alexes, not decided by Remy.
 - Routine reminder emails/texts on the built-in day 1/5/10/23 cadence are expected day-to-day work — no separate approval needed for those, since they're following the fixed automation schedule already agreed on.
-- Any deviation from the standard cadence, fee, or process (e.g. skipping inspection, waiving the $150 fee) requires Randi's sign-off.
+- Any deviation from the standard cadence, fee, or process (e.g. skipping inspection, waiving the $150 fee) requires Alexes's sign-off.
 
 ---
 
@@ -174,4 +174,4 @@ For any renewal Remy is asked about, return:
 - Mid-month rent changes are pro-rated correctly across both rate periods.
 - Renter's insurance is checked before close-out.
 - Non-renewal situations are routed to @Alexes, not decided independently.
-- E-signature document sends are confirmed with Randi first.
+- E-signature document sends are confirmed with Alexes first.
