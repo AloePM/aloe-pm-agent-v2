@@ -610,7 +610,6 @@ Always check Aptly/Rentvine for owner preferred vendor or home warranty first.
 | Vendor | Contact | Phone | Zone | Notes |
 |---|---|---|---|---|
 | Castellanos CleanPro & Restoration LLC |  |  | Maricopa, Casa Grande |  |
-| East Valley Carpet Cleaners |  |  | East Valley | East Valley areas: Chandler, Gilbert, Mesa, Tempe, Ahwatukee, Queen Creek, San Tan Valley. |
 | Sean Floorsmith |  |  | Maricopa, Valley-wide | Also listed under Flooring. |
 | Network Carpet |  | +14808449755 | Valley-wide |  |
 
@@ -685,7 +684,7 @@ Always check Aptly/Rentvine for owner preferred vendor or home warranty first.
 | Vendor | Contact | Phone | Zone | Notes |
 |---|---|---|---|---|
 | Castellanos CleanPro & Restoration LLC |  | +15202807161 | Casa Grande, Maricopa |  |
-| East Valley Floor Care |  | +14803401187 | East Valley, Scottsdale, Tempe, Mesa, San Tan Valley, Queen Creek, Ahwatukee, Gilbert, Chandler |  |
+| East Valley Floor Care | +14803401187 | East Valley, Scottsdale, Tempe, Mesa, San Tan Valley, Queen Creek, Ahwatukee, Gilbert, Chandler | Primary carpet cleaner East Valley. Ph: +14803401187 |
 | Network Carpet |  | +14808449755 | Valley-wide, West Valley, Phoenix |  |
 
 ### Electrical
