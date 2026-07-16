@@ -7,6 +7,7 @@ const ARI_TOOLS = [
   { name: 'aptly_get_comments', description: 'Get all comments on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] } },
   { name: 'aptly_update_card', description: 'Update a field on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, field_name: { type: 'string' }, value: {} }, required: ['card_id','field_name','value'] } },
   { name: 'rv_dispatch_vendor', description: 'Look up a vendor in Rentvine by name AND assign them to a work order in one step. Pass vendor name and the card rentvineId. This is the ONLY tool needed to assign a vendor - it handles search and assignment automatically.', input_schema: { type: 'object', properties: { vendor_name: { type: 'string', description: 'Vendor name to search for in Rentvine' }, rv_wo_id: { type: 'string', description: 'Rentvine work order ID from aptly_get_card rentvineId field' }, send_notification: { type: 'boolean', description: 'Send notification to vendor (default true)' } }, required: ['vendor_name','rv_wo_id'] } },
+  { name: 'get_vendor_for_trade', description: 'Get the right vendor for a trade and location from the Aloe vendor directory. Always use this BEFORE rv_dispatch_vendor to find the correct vendor for the job. Pass the trade (e.g. HVAC, Plumbing, Garage Doors, Cleaning, Handyman, Roofing, Landscaping, Appliances) and the city/zone (e.g. Maricopa, Chandler, Gilbert, Scottsdale, Mesa, Phoenix). Returns the recommended vendor name, phone, and any important notes.', input_schema: { type: 'object', properties: { trade: { type: 'string', description: 'Trade category e.g. HVAC, Plumbing, Garage Doors, Cleaning, Handyman, Roofing, Landscaping, Appliances, Pest Control, Electrical' }, zone: { type: 'string', description: 'City or zone e.g. Maricopa, Chandler, Gilbert, Scottsdale, Mesa, Phoenix, East Valley' } }, required: ['trade'] } },
   { name: 'rv_search_vendor', description: 'Look up a vendor in Rentvine by name to get their Rentvine contact ID for assigning to work orders.', input_schema: { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] } },
   { name: 'aptly_add_comment', description: 'Add a comment to a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, content: { type: 'string' } }, required: ['card_id','content'] } },
   { name: 'aptly_create_work_order', description: 'Create a new work order card in Aptly. Create immediately when staff gives a clear address, stage, and description. Stage rules: Open=notifies tenant+owner; Internal Work Order Request=no notifications (cleaning, carpet, mailbox, mold); Unit Turn=vacant large project; Estimating=quotes only.', input_schema: { type: 'object', properties: { description: { type: 'string' }, address: { type: 'string' }, stage: { type: 'string' }, priority: { type: 'string', enum: ['Low','Med','High'] }, unitId: { type: 'string' }, locationId: { type: 'string' }, portfolioId: { type: 'string' }, isSharedWithTenant: { type: 'boolean' }, isSharedWithOwner: { type: 'boolean' } }, required: ['description'] } },
@@ -201,6 +202,27 @@ async function executeAriTool(toolName, input) {
         });
         const ad = await ar.json();
         return ar.ok ? { success: true, vendorName, vendorContactID } : { error: 'RV assign error', detail: ad };
+      }
+      case 'get_vendor_for_trade': {
+        const r = await hubRequest('GET', '/api/vendors');
+        if (r.status !== 200) return { error: 'Could not load vendor directory' };
+        const trades = r.body.trades || [];
+        const tradeLower = (input.trade || '').toLowerCase();
+        const zoneLower = (input.zone || '').toLowerCase();
+        // Find matching trade
+        const trade = trades.find(t => (t.name||'').toLowerCase().includes(tradeLower) || tradeLower.includes((t.name||'').toLowerCase()));
+        if (!trade) return { error: `No trade found for: ${input.trade}`, availableTrades: trades.map(t=>t.name).filter(Boolean) };
+        const vendors = trade.vendors || [];
+        // Filter by zone if provided
+        let matched = vendors;
+        if (zoneLower) {
+          matched = vendors.filter(v => {
+            const zones = (v.zones||[]).map(z=>z.toLowerCase());
+            return zones.some(z => z.includes(zoneLower) || zoneLower.includes(z) || z === 'valley-wide');
+          });
+          if (!matched.length) matched = vendors.filter(v => (v.zones||[]).map(z=>z.toLowerCase()).includes('valley-wide'));
+        }
+        return { trade: trade.name, zone: input.zone || 'any', vendors: matched.slice(0,3).map(v => ({ name: v.name, phone: v.phone, zones: v.zones, notes: v.notes, priority: v.priority })) };
       }
       case 'rv_search_vendor': {
         const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
