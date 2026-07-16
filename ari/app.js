@@ -54,10 +54,19 @@ When staff gives a WO number like 106573, use that to search Aptly (it appears i
 
 When triaging any work order — via webhook or staff @mention:
 1. Always identify the correct Aptly Issue Type based on the description
-2. Always state it explicitly: "Aptly Issue Type: Ice Maker"
-3. Always offer to set it: "Want me to update the issue type in Aptly?"
-4. If staff confirms — use aptly_update_card with field_name "Issue Type" and the correct value
-5. Never complete a triage without stating and offering to set the issue type
+2. State it explicitly: "Aptly Issue Type: Water Heater"
+3. If 90%+ confident — auto-set it immediately using aptly_update_card with field_name "Issue Type". No confirmation needed.
+4. Setting the Issue Type triggers Aptly to auto-send troubleshooting steps to the tenant — this happens for ALL issue types including HVAC, leaks, water heater, plumbing. Even emergencies get troubleshooting steps (shutoff instructions, safety steps, damage prevention).
+5. For emergencies (HVAC out, active leak, water heater failure, sewage backup, roof leak, electrical hazard) — ALSO dispatch vendor immediately. Troubleshooting steps AND dispatch happen simultaneously.
+6. For non-emergencies — set issue type and wait for tenant response before dispatching.
+
+When assigning a vendor to a work order:
+Once staff confirms a vendor assignment (says "yes", "assign", "go ahead", names a vendor), execute ALL steps automatically without stopping:
+1. aptly_get_card — get rentvineId and maintenanceNotes
+2. aptly_update_card with field_name "home warranty" — Yes if property has warranty AND issue is covered, No otherwise
+3. rv_dispatch_vendor — pass vendor_name and rv_wo_id (rentvineId from step 1) — this looks up and assigns vendor in Rentvine in one step
+4. Tell staff: done, vendor assigned in Rentvine, home warranty updated
+Do NOT stop between steps. Do NOT use aptly_dispatch_vendor or rv_assign_vendor separately.
 
 ## YOUR PLAYBOOK
 ${playbook}
@@ -113,7 +122,7 @@ const APTLY_TOOLS = [
   { name: 'aptly_get_comments', description: 'Get all comments and activity on a work order card to see updates, vendor notes, and staff communications.', input_schema: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] } },
 
   { name: 'aptly_update_card', description: 'Update a field on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, field_name: { type: 'string' }, value: {} }, required: ['card_id','field_name','value'] } },
-  { name: 'aptly_dispatch_vendor', description: 'Dispatch or reassign a vendor to a work order in Aptly. Sets the vendor field and home warranty field, triggering stage change to Requested and sending dispatch emails. For reassignments, also sets the Reassigned Vendor flag. Always confirm with staff before dispatching.', input_schema: { type: 'object', properties: { card_id: { type: 'string', description: 'Alphanumeric card ID' }, vendor_phone: { type: 'string', description: 'Vendor phone number from vendor directory e.g. +14802039689' }, home_warranty: { type: 'string', enum: ['Yes', 'No'], description: 'Yes if property has home or builder warranty, No otherwise' }, is_reassign: { type: 'boolean', description: 'Set to true if reassigning from a previous vendor' } }, required: ['card_id', 'vendor_phone', 'home_warranty'] } },
+  { name: 'aptly_update_home_warranty', description: 'Update ONLY the home warranty field on an Aptly card. Use Yes if property has warranty AND issue is covered (plumbing, HVAC, electrical, appliances). Use No if no warranty OR issue not covered (cleaning, carpet, landscaping, pest, cosmetic, mailbox). Check maintenanceNotes first.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, home_warranty: { type: 'string', enum: ['Yes', 'No'] } }, required: ['card_id', 'home_warranty'] } },
   { name: 'aptly_add_comment', description: 'Add a comment to a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, content: { type: 'string' } }, required: ['card_id','content'] } },
   { name: 'send_sms', description: 'Send an SMS text message to a tenant, owner, or vendor via Quo from the Aloe main number (602-854-9884). Always confirm with staff before sending. Use for: tenant troubleshooting steps, vendor dispatch confirmations, follow-up requests.', input_schema: { type: 'object', properties: { to: { type: 'string', description: 'Phone number to text e.g. +14805551234' }, message: { type: 'string', description: 'Message text to send' }, recipient_type: { type: 'string', enum: ['tenant', 'owner', 'vendor'], description: 'Who you are texting' } }, required: ['to', 'message'] } },
   { name: 'send_email', description: 'Send an email to a tenant, owner, or vendor via Aptly. Always confirm with staff before sending. Use for: work order updates, dispatch confirmations, formal communications.', input_schema: { type: 'object', properties: { to_email: { type: 'string', description: 'Recipient email address' }, to_name: { type: 'string', description: 'Recipient name' }, subject: { type: 'string', description: 'Email subject' }, body: { type: 'string', description: 'Email body (plain text or HTML)' }, recipient_type: { type: 'string', enum: ['tenant', 'owner', 'vendor'], description: 'Who you are emailing' } }, required: ['to_email', 'subject', 'body'] } },

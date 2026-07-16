@@ -6,6 +6,8 @@ const ARI_TOOLS = [
   { name: 'aptly_get_card', description: 'Get full details of a work order card. Use the alphanumeric id from search results, never the WO number.', input_schema: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] } },
   { name: 'aptly_get_comments', description: 'Get all comments on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] } },
   { name: 'aptly_update_card', description: 'Update a field on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, field_name: { type: 'string' }, value: {} }, required: ['card_id','field_name','value'] } },
+  { name: 'rv_dispatch_vendor', description: 'Look up a vendor in Rentvine by name AND assign them to a work order in one step. Pass vendor name and the card rentvineId. This is the ONLY tool needed to assign a vendor - it handles search and assignment automatically.', input_schema: { type: 'object', properties: { vendor_name: { type: 'string', description: 'Vendor name to search for in Rentvine' }, rv_wo_id: { type: 'string', description: 'Rentvine work order ID from aptly_get_card rentvineId field' }, send_notification: { type: 'boolean', description: 'Send notification to vendor (default true)' } }, required: ['vendor_name','rv_wo_id'] } },
+  { name: 'rv_dispatch_vendor', description: 'Look up a vendor in Rentvine by name AND assign them to a work order in one step. Pass vendor name and the card rentvineId. This is the ONLY tool needed to assign a vendor - it handles search and assignment automatically.', input_schema: { type: 'object', properties: { vendor_name: { type: 'string', description: 'Vendor name to search for in Rentvine' }, rv_wo_id: { type: 'string', description: 'Rentvine work order ID from aptly_get_card rentvineId field' }, send_notification: { type: 'boolean', description: 'Send notification to vendor (default true)' } }, required: ['vendor_name','rv_wo_id'] } },
   { name: 'rv_search_vendor', description: 'Look up a vendor in Rentvine by name to get their Rentvine contact ID for assigning to work orders.', input_schema: { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] } },
   { name: 'rv_assign_vendor', description: 'Assign a vendor to a work order in Rentvine. Use rv_search_vendor first to get vendor contactID. Pass the card rentvineId as rv_wo_id. This is the ONLY way to assign vendors - do not use aptly_dispatch_vendor.', input_schema: { type: 'object', properties: { rv_wo_id: { type: 'string', description: 'Rentvine work order ID from aptly_get_card rentvineId field' }, vendor_contact_id: { type: 'string', description: 'Vendor Rentvine contactID from rv_search_vendor' }, send_notification: { type: 'boolean' } }, required: ['rv_wo_id','vendor_contact_id'] } },
   { name: 'aptly_add_comment', description: 'Add a comment to a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, content: { type: 'string' } }, required: ['card_id','content'] } },
@@ -181,6 +183,46 @@ async function executeAriTool(toolName, input) {
           await hubRequest('POST', `/api/aptly/cards/${input.card_id}/comment`, { content: comment });
         }
         return { success: true, to: input.to, message: input.message };
+      }
+      case 'rv_dispatch_vendor': {
+        const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
+        // Step 1: Find vendor by name
+        const sr = await fetch(`https://aloepm.rentvine.com/api/manager/contacts?contactType=vendor&search=${encodeURIComponent(input.vendor_name)}&pageSize=10`, {
+          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm' }
+        });
+        const sd = await sr.json();
+        const items = Array.isArray(sd) ? sd : (sd.data||[]);
+        if (!items.length) return { error: `Vendor not found in Rentvine: ${input.vendor_name}` };
+        const vendorContactID = items[0].contact?.contactID;
+        const vendorName = items[0].contact?.name || input.vendor_name;
+        // Step 2: Assign vendor to WO
+        const ar = await fetch(`https://aloepm.rentvine.com/api/manager/maintenance/work-orders/${input.rv_wo_id}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vendorContactID: String(vendorContactID), sendVendorNotification: input.send_notification !== false })
+        });
+        const ad = await ar.json();
+        return ar.ok ? { success: true, vendorName, vendorContactID } : { error: 'RV assign error', detail: ad };
+      }
+      case 'rv_dispatch_vendor': {
+        const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
+        // Step 1: Find vendor by name
+        const sr = await fetch(`https://aloepm.rentvine.com/api/manager/contacts?contactType=vendor&search=${encodeURIComponent(input.vendor_name)}&pageSize=10`, {
+          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm' }
+        });
+        const sd = await sr.json();
+        const items = Array.isArray(sd) ? sd : (sd.data||[]);
+        if (!items.length) return { error: `Vendor not found in Rentvine: ${input.vendor_name}` };
+        const vendorContactID = items[0].contact?.contactID;
+        const vendorName = items[0].contact?.name || input.vendor_name;
+        // Step 2: Assign vendor to WO
+        const ar = await fetch(`https://aloepm.rentvine.com/api/manager/maintenance/work-orders/${input.rv_wo_id}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vendorContactID: String(vendorContactID), sendVendorNotification: input.send_notification !== false })
+        });
+        const ad = await ar.json();
+        return ar.ok ? { success: true, vendorName, vendorContactID } : { error: 'RV assign error', detail: ad };
       }
       case 'rv_search_vendor': {
         const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
