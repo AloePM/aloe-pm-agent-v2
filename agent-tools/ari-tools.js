@@ -6,7 +6,8 @@ const ARI_TOOLS = [
   { name: 'aptly_get_card', description: 'Get full details of a work order card. Use the alphanumeric id from search results, never the WO number.', input_schema: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] } },
   { name: 'aptly_get_comments', description: 'Get all comments on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] } },
   { name: 'aptly_update_card', description: 'Update a field on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, field_name: { type: 'string' }, value: {} }, required: ['card_id','field_name','value'] } },
-  { name: 'aptly_dispatch_vendor', description: 'Dispatch a vendor to a work order. First call aptly_get_vendor_contact to get vendor _id, then pass that _id here as vendor_id. Do NOT use phone number for dispatch.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, vendor_id: { type: 'string', description: 'Vendor _id from aptly_get_vendor_contact result' }, vendor_name: { type: 'string' }, home_warranty: { type: 'string', enum: ['Yes','No'] }, is_reassign: { type: 'boolean' } }, required: ['card_id','home_warranty'] } },
+  { name: 'rv_search_vendor', description: 'Look up a vendor in Rentvine by name to get their Rentvine contact ID for assigning to work orders.', input_schema: { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] } },
+  { name: 'rv_assign_vendor', description: 'Assign a vendor to a work order in Rentvine. Use rv_search_vendor first to get vendor contactID. Pass the card rentvineId as rv_wo_id. This is the ONLY way to assign vendors - do not use aptly_dispatch_vendor.', input_schema: { type: 'object', properties: { rv_wo_id: { type: 'string', description: 'Rentvine work order ID from aptly_get_card rentvineId field' }, vendor_contact_id: { type: 'string', description: 'Vendor Rentvine contactID from rv_search_vendor' }, send_notification: { type: 'boolean' } }, required: ['rv_wo_id','vendor_contact_id'] } },
   { name: 'aptly_add_comment', description: 'Add a comment to a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, content: { type: 'string' } }, required: ['card_id','content'] } },
   { name: 'aptly_create_work_order', description: 'Create a new work order card in Aptly. Create immediately when staff gives a clear address, stage, and description. Stage rules: Open=notifies tenant+owner; Internal Work Order Request=no notifications (cleaning, carpet, mailbox, mold); Unit Turn=vacant large project; Estimating=quotes only.', input_schema: { type: 'object', properties: { description: { type: 'string' }, address: { type: 'string' }, stage: { type: 'string' }, priority: { type: 'string', enum: ['Low','Med','High'] }, unitId: { type: 'string' }, locationId: { type: 'string' }, portfolioId: { type: 'string' }, isSharedWithTenant: { type: 'boolean' }, isSharedWithOwner: { type: 'boolean' } }, required: ['description'] } },
   { name: 'aptly_get_vendor_contact', description: 'Look up a vendor contact in Aptly by name to get their phone number and email.', input_schema: { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] } },
@@ -180,6 +181,27 @@ async function executeAriTool(toolName, input) {
           await hubRequest('POST', `/api/aptly/cards/${input.card_id}/comment`, { content: comment });
         }
         return { success: true, to: input.to, message: input.message };
+      }
+      case 'rv_search_vendor': {
+        const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
+        const r = await fetch(`https://aloepm.rentvine.com/api/manager/contacts?contactType=vendor&search=${encodeURIComponent(input.name)}&pageSize=10`, {
+          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm' }
+        });
+        const d = await r.json();
+        const items = Array.isArray(d) ? d : (d.data||[]);
+        const vendors = items.map(i => ({ contactID: i.contact?.contactID, name: i.contact?.name || i.contact?.firstName }));
+        return { vendors };
+      }
+      case 'rv_assign_vendor': {
+        const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
+        const body = { vendorContactID: String(input.vendor_contact_id), sendVendorNotification: input.send_notification !== false };
+        const r = await fetch(`https://aloepm.rentvine.com/api/manager/maintenance/work-orders/${input.rv_wo_id}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm', 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const d = await r.json();
+        return r.ok ? { success: true } : { error: 'RV error', detail: d };
       }
       case 'rv_search_property': {
         const res = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(input.address)}`);
