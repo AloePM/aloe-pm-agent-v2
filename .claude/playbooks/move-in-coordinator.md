@@ -218,3 +218,60 @@ Property Manager / Randi. Escalates: any exception to standard charges, lease te
 - Approves lock changes, modifications, or early move-ins without written PM approval
 - Skips the placement fee on move-in day
 - Assumes utilities are set up — always verify via Citizen portal
+
+---
+
+## Complete Aptly Automation Map (what fires automatically — Mary does NOT duplicate these)
+
+### Triggered by stage/segment — fully automated:
+
+| What fires | When | Template |
+|---|---|---|
+| Congratulations approval email to tenant | 15 min after new move-in card created | `PWpehcY5u4ZQag3vH` |
+| Reminder to pay deposit | 1 day after at 3pm | `bbW4gJnSCSP3MkKh7` |
+| Next Steps after deposit paid | When deposit paid segment triggered | `GLCcXDozaKsPpQQz6` |
+| Next Steps after deposit paid (alt) | When deposit paid segment triggered | `GLCcXDozaKsPpQQz6` |
+| Send lease to tenant | 25 min after stage change | `XkcL93ZGAjxhoAsns` |
+| Reminder to sign lease | 1 day after at 10am | `4no8ua8hWLNoTXrPG` |
+| Reminder to sign lease | 2 days after at 8am | `4no8ua8hWLNoTXrPG` |
+| Congrats lease signed email | When lease signed segment triggered | `RJWpQzrEThwTHrX2n` |
+| Stage → Lease Signed | When lease signed segment triggered | — |
+| Stage → Lease Sent | When write lease task completed | — |
+| Reminder: utilities + insurance | 5 days after at 8am | `TwxAXSd4RxNn7dWF7` |
+| Reminder: utilities + insurance (quick move-in) | 1 day after at 8am | `TwxAXSd4RxNn7dWF7` |
+| Preparing for Move-In email | 1 hour after at 8am | `icY594brmRWBtvMvW` |
+| Unpaid move-in charges email | When funds reminder triggered | `CXtkc2yngW58aFFHq` |
+| Stage → Move-In Day | Move-in day at 9am | — |
+| Move-in day key pickup email | Immediately on Move-In Day stage | `khKTGGCbqRAeD77Wo` |
+| Move-in inspection reminder | When inspection reminder triggered | `hpva8oC7bA5tHYMWu` |
+| Welcome email + help page | 7 hours after Move-In Day | `43FDaxCns8foAeM6o` |
+| Stage → Moved In | 8 hours after Move-In Day at 8am | — |
+| Owner: New tenant moved in | When Moved In stage | `ipwrFP7zxqtunfMHJ` |
+| Landscaping email to tenant | 10 days after Moved In at 9am | `BP44pLXxgqhwtZcHX` |
+| Air filter email to tenant | 15 days after Moved In at 9am | `Qt32suTa9MQCY7h27` |
+| Pest control email to tenant | 20 days after Moved In at 9am | `nZfoP2Zmd7GH2WaXH` |
+| Water utility email to tenant | 25 days after Moved In at 9am | `NvfxraF6CDs4KYdk8` |
+| 7-day check-in email | 6 days after at 8am | `eW4EyW9xombphJxAN` |
+| First week of tenancy email | 7 days after | `eW4EyW9xombphJxAN` |
+| Stage → 30 Day Check-In | When 30-day segment triggered | — |
+| Stage → 90 Day Check-In | When 90-day segment triggered | — |
+| Stage → Abandoned | When cancel move-in triggered | — |
+| Approval of Qualified Tenant to Owner | When approval segment triggered | `B652nj6e3SZ663wCd` |
+| Pre move-in photos task | 3 days before move-in | — |
+| No deposit tasks | 1 day after at 8am | — |
+| Write Lease task | When approved | — |
+| Task: Activate Lease + Verify Payment | When triggered | — |
+| Task: Schedule Cleaning + Open WOs | When triggered | — |
+| Check funds cleared / Pay out owners | 7 days after | — |
+
+### What Mary does MANUALLY (not automated):
+- Fill Aptly Lease Verification Fields
+- Take home off market (Aptly toggles + MLS Pending)
+- Add all charges in Rentvine
+- Enable/disable payment override in Rentvine
+- Upload signed lease to Rentvine + Google Drive
+- Verify utilities via Citizen portal
+- Process $750 placement fee bill on move-in day
+- Confirm zInspector move-in ready inspection completed
+- Fix any Rentvine lease data mismatches
+- Call/text tenant if lease unsigned after day 3
