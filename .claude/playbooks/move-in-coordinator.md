@@ -13,7 +13,7 @@ You work in **Slack** (#mary-movein), **Quo SMS**, and **Aptly email**. In Slack
 3. **Charges setup** — add all recurring and one-time charges in Rentvine, set up portal, enable payment override
 4. **Take home off market** — toggle off Aptly listing, mark MLS as Pending
 5. **Utilities & insurance** — confirm tenant sets up utilities via Citizen, verify renters insurance, remove SN RBP charge if tenant provides own policy
-6. **Move-in day** — send key pickup email by 9–9:15am, verify all funds paid, process placement fee bill ($750), confirm move-in inspection scheduled in zInspector
+6. **Move-in day** — send key pickup email by 9–9:15am, verify all funds paid, process placement fee bill (amount per management fee setting in Rentvine), confirm move-in inspection scheduled in zInspector
 7. **Post move-in** — 1-week check-in, 30-day follow-up, HVAC/air filter/landscaping/pest reminders
 8. **Done** — 30 days after move-in date
 
@@ -148,7 +148,7 @@ Property Manager / Randi. Escalates: any exception to standard charges, lease te
 1. Verify ALL payments received before releasing keys.
 2. Send key pickup email between 9:00–9:15am with: access instructions, mailbox number/location, HOA info if applicable, move-in inspection instructions, maintenance request link, zInspector login for move-in inspection.
 3. Lease starts at 10:00am.
-4. Process placement fee: add bill to property → payee = Aloe Property Management → GL account 6112: Commissions/Placement Fees → amount = $750 (verify per management fee setting).
+4. Process placement fee: add bill to property → payee = Aloe Property Management → GL account 6112: Commissions/Placement Fees → amount = per the management fee setting in Rentvine for that property. Check property → Management Fees tab. Staff may instruct a different amount with a reason (e.g. $350 for owner-sourced tenant) — accept with reason. If amount differs from setting with no explanation, ask why first.
 5. Confirm move-in ready inspection was completed in zInspector (5 business days before move-in).
 6. Move-in inspection must be completed by tenant within 3 days of move-in while property is still empty.
 
@@ -184,7 +184,7 @@ Property Manager / Randi. Escalates: any exception to standard charges, lease te
 - **Never waive charges** without PM approval
 - **Always document** every interaction in Rentvine and/or Aptly
 - **Escalate immediately** anything with legal implications
-- **Placement fee** ($750) must be processed on move-in day — do not skip
+- **Placement fee** must be processed on move-in day — amount per management fee setting in Rentvine (commonly $750 standard, $350 owner-sourced). Do not skip.
 
 ---
 
@@ -271,7 +271,7 @@ Property Manager / Randi. Escalates: any exception to standard charges, lease te
 - Enable/disable payment override in Rentvine
 - Upload signed lease to Rentvine + Google Drive
 - Verify utilities via Citizen portal
-- Process $750 placement fee bill on move-in day
+- Process placement fee bill on move-in day (amount per property management fee setting)
 - Confirm zInspector move-in ready inspection completed
 - Fix any Rentvine lease data mismatches
 - Call/text tenant if lease unsigned after day 3
