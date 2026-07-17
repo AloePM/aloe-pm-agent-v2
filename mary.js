@@ -129,31 +129,49 @@ async function executeMaryTool(name, input) {
 
   switch(name) {
     case 'get_move_in_lease': {
-      // Search leases by tenant name or address
-      const leases = await rvFetch('/leases/export', { pageSize: 100, page: 1, search: input.search, primaryLeaseStatusIDs: '1,2' });
-      const arr = Array.isArray(leases) ? leases : (leases.data || []);
-      if (!arr.length) return JSON.stringify({ error: `No lease found for: ${input.search}` });
-      const match = arr[0];
-      const lease = match.lease || match;
-      const unit = match.unit || {};
-      const property = match.property || {};
-      // Get tenants
-      let tenants = [];
-      if (lease.leaseID) {
-        try {
-          const t = await rvFetch(`/leases/${lease.leaseID}/tenants`);
-          tenants = (Array.isArray(t) ? t : (t.data || [])).map(t => ({ name: t.name || t.displayName, email: t.email, isPrimary: t.isPrimary }));
-        } catch(e) {}
+      const normalizeAddr = s => s.toLowerCase()
+        .replace(/east/g, 'e').replace(/west/g, 'w').replace(/north/g, 'n').replace(/south/g, 's')
+        .replace(/street/g, 'st').replace(/avenue/g, 'ave').replace(/drive/g, 'dr')
+        .replace(/court/g, 'ct').replace(/circle/g, 'cir').replace(/lane/g, 'ln')
+        .replace(/place/g, 'pl').replace(/road/g, 'rd').replace(/[^a-z0-9]/g, '');
+      const normSearch = normalizeAddr(input.search || '');
+      const nameSearch = (input.search || '').toLowerCase().replace(/[^a-z]/g, '');
+      // Search pending/active leases only (much smaller set than all units)
+      let allLeases = [];
+      for (let pg = 1; pg <= 8; pg++) {
+        const ld = await rvFetch('/leases/export', { pageSize: 100, page: pg, primaryLeaseStatusIDs: '1,2' });
+        const batch = Array.isArray(ld) ? ld : (ld.data || []);
+        if (!batch.length) break;
+        allLeases = allLeases.concat(batch);
+        if (batch.length < 100) break;
       }
+      const lMatch = allLeases.find(l => {
+        const tenants = (l.lease?.tenants || []).join(' ').toLowerCase().replace(/[^a-z]/g, '');
+        const addr = normalizeAddr(l.unit?.address || '');
+        return tenants.includes(nameSearch.slice(0, 8)) ||
+               addr.includes(normSearch.slice(0, 8)) ||
+               normSearch.includes(addr.slice(0, 8));
+      });
+      if (!lMatch) return JSON.stringify({ error: `No active/pending lease found for: ${input.search}` });
+      const leaseID = lMatch.lease?.leaseID;
+      const leaseData = await rvFetch(`/leases/${leaseID}`);
+      const lease = leaseData.lease || leaseData;
+      const unit = lMatch.unit || {};
+      let tenants = [];
+      try {
+        const t = await rvFetch(`/leases/${leaseID}/tenants`);
+        tenants = (Array.isArray(t) ? t : (t.data || [])).map(t => ({ name: t.name || t.displayName, email: t.email }));
+      } catch(e) {}
       return JSON.stringify({
-        leaseID: lease.leaseID,
-        address: unit.address || property.address,
-        city: unit.city || property.city,
-        moveInDate: lease.startDate,
+        leaseID,
+        address: unit.address,
+        city: unit.city,
+        moveInDate: lease.moveInDate || lease.startDate,
         endDate: lease.endDate,
         rent: unit.rent,
         deposit: unit.deposit,
         status: lease.primaryLeaseStatusID,
+        rentersInsurance: lease.rentersInsuranceCompany,
         tenants
       });
     }
