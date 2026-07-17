@@ -66,6 +66,165 @@ const app = new App({
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+const RENTVINE_BASE = `https://${process.env.RENTVINE_ACCOUNT}.rentvine.com/api/manager`;
+const RENTVINE_AUTH = Buffer.from(`${process.env.RENTVINE_API_KEY}:${process.env.RENTVINE_API_SECRET}`).toString('base64');
+
+async function rvFetch(path, params = {}) {
+  const url = new URL(`${RENTVINE_BASE}${path}`);
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) url.searchParams.set(k, v); });
+  const r = await fetch(url.toString(), { headers: { Authorization: `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT } });
+  if (!r.ok) { const txt = await r.text(); throw new Error(`Rentvine ${r.status}: ${txt.slice(0, 100)}`); }
+  return r.json();
+}
+
+const MARY_TOOLS = [
+  {
+    name: 'get_move_in_lease',
+    description: 'Look up a lease and tenant details for a move-in by property address or tenant name. Returns lease ID, tenant names, move-in date, rent, deposit, charges, and lease status.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        search: { type: 'string', description: 'Property address or tenant name to search for' }
+      },
+      required: ['search']
+    }
+  },
+  {
+    name: 'get_lease_charges',
+    description: 'Get all charges and balance for a specific lease. Shows what has been paid and what is outstanding.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        leaseID: { type: 'string', description: 'Rentvine lease ID' }
+      },
+      required: ['leaseID']
+    }
+  },
+  {
+    name: 'get_aptly_movein_card',
+    description: 'Get the Move-Ins board card for a tenant or property. Returns card fields including lease verification status, deposit paid checkbox, utilities, insurance, and move-in date.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        search: { type: 'string', description: 'Tenant name or property address to search for on the Move-Ins board' }
+      },
+      required: ['search']
+    }
+  },
+  {
+    name: 'get_pending_move_ins',
+    description: 'Get all upcoming move-ins from the Aptly Move-Ins board. Shows tenants, properties, move-in dates, and status of each step.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        days: { type: 'number', description: 'Number of days ahead to look. Default 30.' }
+      }
+    }
+  }
+];
+
+async function executeMaryTool(name, input) {
+  const azNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
+  const today = azNow.toISOString().slice(0, 10);
+
+  switch(name) {
+    case 'get_move_in_lease': {
+      // Search leases by tenant name or address
+      const leases = await rvFetch('/leases/export', { pageSize: 100, page: 1, search: input.search, primaryLeaseStatusIDs: '1,2' });
+      const arr = Array.isArray(leases) ? leases : (leases.data || []);
+      if (!arr.length) return JSON.stringify({ error: `No lease found for: ${input.search}` });
+      const match = arr[0];
+      const lease = match.lease || match;
+      const unit = match.unit || {};
+      const property = match.property || {};
+      // Get tenants
+      let tenants = [];
+      if (lease.leaseID) {
+        try {
+          const t = await rvFetch(`/leases/${lease.leaseID}/tenants`);
+          tenants = (Array.isArray(t) ? t : (t.data || [])).map(t => ({ name: t.name || t.displayName, email: t.email, isPrimary: t.isPrimary }));
+        } catch(e) {}
+      }
+      return JSON.stringify({
+        leaseID: lease.leaseID,
+        address: unit.address || property.address,
+        city: unit.city || property.city,
+        moveInDate: lease.startDate,
+        endDate: lease.endDate,
+        rent: unit.rent,
+        deposit: unit.deposit,
+        status: lease.primaryLeaseStatusID,
+        tenants
+      });
+    }
+    case 'get_lease_charges': {
+      const charges = await rvFetch(`/leases/${input.leaseID}/charges`);
+      const arr = Array.isArray(charges) ? charges : (charges.data || []);
+      const balance = await rvFetch(`/leases/${input.leaseID}/balance`).catch(() => null);
+      return JSON.stringify({ leaseID: input.leaseID, charges: arr.slice(0, 30), balance });
+    }
+    case 'get_aptly_movein_card': {
+      const searchTerm = (input.search || '').toLowerCase();
+      let page = 0;
+      let match = null;
+      while (page < 10) {
+        const r = await fetch(`https://core-api.getaptly.com/api/board/K9mMGGjKgQPqDykaa?page=${page}&pageSize=50`, {
+          headers: { 'x-token': process.env.APTLY_TOKEN }
+        });
+        if (!r.ok) break;
+        const data = await r.json();
+        const arr = data.data || [];
+        if (!arr.length) break;
+        match = arr.find(c => {
+          const name = JSON.stringify(c).toLowerCase();
+          return name.includes(searchTerm.slice(0, 15));
+        });
+        if (match) break;
+        page++;
+      }
+      if (!match) return JSON.stringify({ error: `No Move-In card found for: ${input.search}` });
+      return JSON.stringify(match);
+    }
+    case 'get_pending_move_ins': {
+      const days = input.days || 30;
+      const cutoff = new Date(azNow.getTime() + days * 86400000).toISOString().slice(0, 10);
+      let all = [];
+      let page = 0;
+      while (page < 10) {
+        const r = await fetch(`https://core-api.getaptly.com/api/board/K9mMGGjKgQPqDykaa?page=${page}&pageSize=50`, {
+          headers: { 'x-token': process.env.APTLY_TOKEN }
+        });
+        if (!r.ok) break;
+        const data = await r.json();
+        const arr = data.data || [];
+        if (!arr.length) break;
+        all = all.concat(arr);
+        page++;
+      }
+      // Filter by move-in date within range
+      const upcoming = all.filter(c => {
+        const moveIn = c.moveInDate || c['Mirror Move-in Date'] || c.mirrorMoveInDate;
+        if (!moveIn) return true; // include if no date set
+        return moveIn.slice(0, 10) <= cutoff;
+      });
+      return JSON.stringify({ count: upcoming.length, moveIns: upcoming.slice(0, 20).map(c => ({
+        cardId: c._cardId || c.cardId,
+        stage: c.stage,
+        tenant: c.name || c.title,
+        address: c.mirrorAddress || c['Mirror Address'],
+        moveInDate: c.moveInDate || c['Mirror Move-in Date'],
+        depositPaid: c.depositPaid || c['Deposit Paid'],
+        leaseSigned: c.leaseSigned || c['Lease Signed'],
+        utilitiesReceived: c.proofOfUtilitiesReceived || c['Proof of Utilities Received'],
+        insuranceComplete: c.rentersInsuranceCompany || c['Renters Insurance Company']
+      }))});
+    }
+    default:
+      return JSON.stringify({ error: `Unknown tool: ${name}` });
+  }
+}
+
+
 async function getThreadHistory(client, channel, threadTs) {
   try {
     const result = await client.conversations.replies({ channel, ts: threadTs, limit: 20 });
@@ -108,7 +267,7 @@ app.event('app_mention', async ({ event, client, say }) => {
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
         system: SYSTEM_PROMPT,
-        tools: [],
+        tools: MARY_TOOLS,
 
         messages: mentionMessages,
       });
@@ -118,8 +277,10 @@ app.event('app_mention', async ({ event, client, say }) => {
         for (const block of response.content) {
           if (block.type === 'tool_use') {
             console.log('Mary tool:', block.name, JSON.stringify(block.input).slice(0, 100));
-            const result = { error: 'no tools yet' };
-            toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) });
+            let result;
+            try { result = await executeMaryTool(block.name, block.input); }
+            catch(e) { result = JSON.stringify({ error: e.message }); }
+            toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: result });
           }
         }
         mentionMessages.push({ role: 'user', content: toolResults });
