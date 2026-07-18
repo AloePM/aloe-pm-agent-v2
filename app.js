@@ -567,7 +567,7 @@ function scheduleFollowUp() {
 // ── Start both servers ─────────────────────────────────────────────────────
 (async () => {
   SYSTEM_PROMPT = await loadPlaybook('ari', SYSTEM_PROMPT);
-  await savePlaybook('ari', SYSTEM_PROMPT);
+  try { await savePlaybook('ari', SYSTEM_PROMPT); } catch(e) { console.log('savePlaybook skipped:', e.message); }
   await slackApp.start();
   console.log('⚡ Ari is online and listening for @Ari mentions');
   scheduleFollowUp();

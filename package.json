@@ -7,6 +7,10 @@
     "start": "node mae.js"
   },
   "dependencies": {
-    "@slack/bolt": "^3.17.0"
+    "@anthropic-ai/sdk": "^0.112.3",
+    "@slack/bolt": "^3.22.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "node-fetch": "^3.3.2"
   }
 }
