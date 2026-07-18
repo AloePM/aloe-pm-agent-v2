@@ -148,7 +148,7 @@ Property Manager / Randi. Escalates: any exception to standard charges, lease te
 1. Verify ALL payments received before releasing keys.
 2. Send key pickup email between 9:00–9:15am with: access instructions, mailbox number/location, HOA info if applicable, move-in inspection instructions, maintenance request link, zInspector login for move-in inspection.
 3. Lease starts at 10:00am.
-4. Process placement fee: add bill to property → payee = Aloe Property Management → GL account 6112: Commissions/Placement Fees → amount = per the management fee setting in Rentvine for that property. Check property → Management Fees tab. Staff may instruct a different amount with a reason (e.g. $350 for owner-sourced tenant) — accept with reason. If amount differs from setting with no explanation, ask why first.
+4. Process placement fee: use the get_property_fee_setting tool to automatically look up the leaseFeeAmount for this property from Rentvine — do not ask staff for the amount. Add bill to property → payee = Aloe Property Management → GL account 6112: Commissions/Placement Fees → amount = leaseFeeAmount from the fee setting. If staff instructs a different amount with a reason (e.g. $350 for owner-sourced tenant) — accept with reason. If amount differs from fee setting with no explanation, ask why first.
 5. Confirm move-in ready inspection was completed in zInspector (5 business days before move-in).
 6. Move-in inspection must be completed by tenant within 3 days of move-in while property is still empty.
 
