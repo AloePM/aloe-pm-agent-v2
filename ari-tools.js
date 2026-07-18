@@ -1,3 +1,4 @@
+const { APTLY_TOOLS, executeAptlyTool } = require('./aptly-tools');
 // ── Ari-specific tools and handlers ──────────────────────────────────────
 const { hubRequest } = require('./hub-client');
 
@@ -275,4 +276,13 @@ async function executeAriTool(toolName, input) {
   } catch(e) { return { error: e.message }; }
 }
 
-module.exports = { ARI_TOOLS, executeAriTool };
+// Merge shared Aptly tools
+const ALL_ARI_TOOLS = [...ARI_TOOLS, ...APTLY_TOOLS];
+
+async function executeAriToolFull(name, input) {
+  const ariResult = await executeAriTool(name, input);
+  if (ariResult !== null && ariResult !== undefined) return ariResult;
+  return await executeAptlyTool(name, input);
+}
+
+module.exports = { ARI_TOOLS: ALL_ARI_TOOLS, executeAriTool: executeAriToolFull };
