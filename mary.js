@@ -4,6 +4,7 @@ const { logActivity } = require('./logActivity');
 const { App } = require('@slack/bolt');
 const Anthropic = require('@anthropic-ai/sdk');
 const { getMcpServers } = require('./mcpConfig');
+const { hubRequest } = require('./hub-client');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -140,34 +141,52 @@ async function executeMaryTool(name, input) {
 
   switch(name) {
     case 'get_move_in_lease': {
-      const normalizeAddr = s => s.toLowerCase()
-        .replace(/east/g, 'e').replace(/west/g, 'w').replace(/north/g, 'n').replace(/south/g, 's')
-        .replace(/street/g, 'st').replace(/avenue/g, 'ave').replace(/drive/g, 'dr')
-        .replace(/court/g, 'ct').replace(/circle/g, 'cir').replace(/lane/g, 'ln')
-        .replace(/place/g, 'pl').replace(/road/g, 'rd').replace(/[^a-z0-9]/g, '');
-      const normSearch = normalizeAddr(input.search || '');
-      const nameSearch = (input.search || '').toLowerCase().replace(/[^a-z]/g, '');
-      // Search pending/active leases only (much smaller set than all units)
-      let allLeases = [];
-      for (let pg = 1; pg <= 8; pg++) {
-        const ld = await rvFetch('/leases/export', { pageSize: 100, page: pg, primaryLeaseStatusIDs: '1,2' });
-        const batch = Array.isArray(ld) ? ld : (ld.data || []);
-        if (!batch.length) break;
-        allLeases = allLeases.concat(batch);
-        if (batch.length < 100) break;
+      // Use Hub property lookup (fast) — strip city/state for best match
+      const shortQ = (input.search || '').split(',')[0].replace(/(gilbert|chandler|mesa|phoenix|scottsdale|maricopa|tempe|az|arizona)/gi, '').trim().slice(0, 20);
+      const propRes = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(shortQ)}`);
+      let propertyID = null;
+      let address = null;
+      if (propRes.status === 200 && propRes.body) {
+        const props = propRes.body.properties || (Array.isArray(propRes.body) ? propRes.body : [propRes.body]);
+        const p = props[0];
+        propertyID = p?.propertyId || p?.propertyID || p?.property?.propertyID;
+        address = p?.address || p?.property?.address;
       }
-      const lMatch = allLeases.find(l => {
-        const tenants = (l.lease?.tenants || []).join(' ').toLowerCase().replace(/[^a-z]/g, '');
-        const addr = normalizeAddr(l.unit?.address || '');
-        return tenants.includes(nameSearch.slice(0, 8)) ||
-               addr.includes(normSearch.slice(0, 8)) ||
-               normSearch.includes(addr.slice(0, 8));
-      });
-      if (!lMatch) return JSON.stringify({ error: `No active/pending lease found for: ${input.search}` });
-      const leaseID = lMatch.lease?.leaseID;
+      // If Hub lookup failed, fall back to tenant name search in leases
+      let leaseID = null;
+      let unit = {};
+      if (propertyID) {
+        // Get lease for this property
+        const unitRes = await rvFetch('/properties/units/export', { pageSize: 10, page: 1, propertyID });
+        const units = Array.isArray(unitRes) ? unitRes : (unitRes.data || []);
+        if (units.length) {
+          unit = units[0].unit || {};
+          leaseID = unit.leaseID;
+        }
+        // If no active lease on unit, check future leases
+        if (!leaseID) {
+          const leases = await rvFetch('/leases/export', { pageSize: 10, page: 1, primaryLeaseStatusIDs: '1,2', propertyIDs: propertyID });
+          const la = Array.isArray(leases) ? leases : (leases.data || []);
+          if (la.length) leaseID = la[0].lease?.leaseID;
+        }
+      } else {
+        // Fall back: search by tenant name across active leases (up to 3 pages)
+        const nameSearch = (input.search || '').toLowerCase().replace(/[^a-z]/g, '');
+        for (let pg = 1; pg <= 3; pg++) {
+          const ld = await rvFetch('/leases/export', { pageSize: 100, page: pg, primaryLeaseStatusIDs: '1,2' });
+          const batch = Array.isArray(ld) ? ld : (ld.data || []);
+          if (!batch.length) break;
+          const match = batch.find(l => {
+            const tenants = (l.lease?.tenants || []).map(t => typeof t === 'string' ? t : t.name || '').join(' ').toLowerCase().replace(/[^a-z]/g, '');
+            return tenants.includes(nameSearch.slice(0, 8));
+          });
+          if (match) { leaseID = match.lease?.leaseID; unit = match.unit || {}; propertyID = match.property?.propertyID; break; }
+          if (batch.length < 100) break;
+        }
+      }
+      if (!leaseID) return JSON.stringify({ error: `No active/pending lease found for: ${input.search}` });
       const leaseData = await rvFetch(`/leases/${leaseID}`);
       const lease = leaseData.lease || leaseData;
-      const unit = lMatch.unit || {};
       let tenants = [];
       try {
         const t = await rvFetch(`/leases/${leaseID}/tenants`);
@@ -175,7 +194,8 @@ async function executeMaryTool(name, input) {
       } catch(e) {}
       return JSON.stringify({
         leaseID,
-        address: unit.address,
+        propertyID,
+        address: address || unit.address,
         city: unit.city,
         moveInDate: lease.moveInDate || lease.startDate,
         endDate: lease.endDate,
@@ -250,28 +270,15 @@ async function executeMaryTool(name, input) {
     }
     case 'get_property_fee_setting': {
       let propID = input.propertyID;
-      // If no propertyID, find it by address
+      // If no propertyID, use Hub property lookup (fast) — use street number only for best results
       if (!propID && input.search) {
-        const normalizeAddr = s => s.toLowerCase()
-          .replace(/east/g, 'e').replace(/west/g, 'w').replace(/north/g, 'n').replace(/south/g, 's')
-          .replace(/street/g, 'st').replace(/avenue/g, 'ave').replace(/drive/g, 'dr')
-          .replace(/[^a-z0-9]/g, '');
-        const normSearch = normalizeAddr(input.search);
-        let allLeases = [];
-        for (let pg = 1; pg <= 8; pg++) {
-          const ld = await rvFetch('/leases/export', { pageSize: 100, page: pg, primaryLeaseStatusIDs: '1,2' });
-          const batch = Array.isArray(ld) ? ld : (ld.data || []);
-          if (!batch.length) break;
-          allLeases = allLeases.concat(batch);
-          if (batch.length < 100) break;
+        const shortQuery = (input.search || '').split(',')[0].replace(/(gilbert|chandler|mesa|phoenix|scottsdale|maricopa|tempe|az|arizona)/gi, '').trim().slice(0, 20);
+        const propRes = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(shortQuery)}`);
+        if (propRes.status === 200 && propRes.body) {
+          const props = propRes.body.properties || (Array.isArray(propRes.body) ? propRes.body : [propRes.body]);
+          const p = props[0];
+          propID = p?.propertyId || p?.propertyID || p?.property?.propertyID;
         }
-        const match = allLeases.find(l => {
-          const addr = normalizeAddr(l.unit?.address || '');
-          const name = (l.lease?.tenants || []).join(' ').toLowerCase().replace(/[^a-z]/g, '');
-          return addr.includes(normSearch.slice(0, 8)) || normSearch.includes(addr.slice(0, 8)) ||
-                 name.includes(normSearch.replace(/[^a-z]/g, '').slice(0, 8));
-        });
-        if (match) propID = match.property?.propertyID;
       }
       if (!propID) return JSON.stringify({ error: 'Property not found — provide propertyID or address' });
       const data = await rvFetch(`/properties/${propID}`, { includes: 'managementFeeSetting' });
