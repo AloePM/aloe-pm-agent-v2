@@ -276,8 +276,10 @@ async function executeAriTool(toolName, input) {
   } catch(e) { return { error: e.message }; }
 }
 
-// Merge shared Aptly tools
-const ALL_ARI_TOOLS = [...ARI_TOOLS, ...APTLY_TOOLS];
+// Merge shared Aptly tools — skip any already defined in ARI_TOOLS
+const ARI_TOOL_NAMES = new Set(ARI_TOOLS.map(t => t.name));
+const EXTRA_APTLY_TOOLS = APTLY_TOOLS.filter(t => !ARI_TOOL_NAMES.has(t.name));
+const ALL_ARI_TOOLS = [...ARI_TOOLS, ...EXTRA_APTLY_TOOLS];
 
 async function executeAriToolFull(name, input) {
   const ariResult = await executeAriTool(name, input);
