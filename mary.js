@@ -120,6 +120,17 @@ const MARY_TOOLS = [
         days: { type: 'number', description: 'Number of days ahead to look. Default 30.' }
       }
     }
+  },
+  {
+    name: 'get_property_fee_setting',
+    description: 'Get the management fee setting for a property including the placement/leasing fee amount, monthly management fee, and renewal fee. Use this on move-in day to determine the correct placement fee to bill. Pass the Rentvine property ID.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        propertyID: { type: 'string', description: 'Rentvine property ID' },
+        search: { type: 'string', description: 'Property address to search for if propertyID is unknown' }
+      }
+    }
   }
 ];
 
@@ -236,6 +247,49 @@ async function executeMaryTool(name, input) {
         utilitiesReceived: c.proofOfUtilitiesReceived || c['Proof of Utilities Received'],
         insuranceComplete: c.rentersInsuranceCompany || c['Renters Insurance Company']
       }))});
+    }
+    case 'get_property_fee_setting': {
+      let propID = input.propertyID;
+      // If no propertyID, find it by address
+      if (!propID && input.search) {
+        const normalizeAddr = s => s.toLowerCase()
+          .replace(/east/g, 'e').replace(/west/g, 'w').replace(/north/g, 'n').replace(/south/g, 's')
+          .replace(/street/g, 'st').replace(/avenue/g, 'ave').replace(/drive/g, 'dr')
+          .replace(/[^a-z0-9]/g, '');
+        const normSearch = normalizeAddr(input.search);
+        let allLeases = [];
+        for (let pg = 1; pg <= 8; pg++) {
+          const ld = await rvFetch('/leases/export', { pageSize: 100, page: pg, primaryLeaseStatusIDs: '1,2' });
+          const batch = Array.isArray(ld) ? ld : (ld.data || []);
+          if (!batch.length) break;
+          allLeases = allLeases.concat(batch);
+          if (batch.length < 100) break;
+        }
+        const match = allLeases.find(l => {
+          const addr = normalizeAddr(l.unit?.address || '');
+          const name = (l.lease?.tenants || []).join(' ').toLowerCase().replace(/[^a-z]/g, '');
+          return addr.includes(normSearch.slice(0, 8)) || normSearch.includes(addr.slice(0, 8)) ||
+                 name.includes(normSearch.replace(/[^a-z]/g, '').slice(0, 8));
+        });
+        if (match) propID = match.property?.propertyID;
+      }
+      if (!propID) return JSON.stringify({ error: 'Property not found — provide propertyID or address' });
+      const data = await rvFetch(`/properties/${propID}`, { includes: 'managementFeeSetting' });
+      const prop = data.property || {};
+      const fee = data.managementFeeSetting || {};
+      return JSON.stringify({
+        propertyID: propID,
+        address: prop.address,
+        city: prop.city,
+        managementFeeSettingID: prop.managementFeeSettingID,
+        feeSettingName: fee.name,
+        monthlyManagementFee: fee.recurringFixedAmount,
+        placementFeeAmount: fee.leaseFeeAmount,
+        placementFeeType: fee.leaseFeeTypeID === '2' ? 'fixed' : 'percent',
+        placementFeePercent: fee.leaseFeePercent,
+        renewalFeeAmount: fee.renewalFeeAmount,
+        renewalFeePercent: fee.renewalFeePercent
+      });
     }
     default:
       return JSON.stringify({ error: `Unknown tool: ${name}` });
