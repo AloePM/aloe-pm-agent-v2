@@ -16,6 +16,7 @@ const ARI_TOOLS = [
   { name: 'send_sms', description: 'Send an SMS to a tenant, owner, or vendor from the Aloe main number (602-854-9884). Include card_id to log as Aptly comment.', input_schema: { type: 'object', properties: { to: { type: 'string' }, message: { type: 'string' }, recipient_type: { type: 'string', enum: ['tenant','owner','vendor'] }, card_id: { type: 'string' } }, required: ['to','message'] } },
   { name: 'rv_search_property', description: 'Search for a property in Rentvine by address.', input_schema: { type: 'object', properties: { address: { type: 'string' } }, required: ['address'] } },
   { name: 'rv_get_property_units', description: 'Get all units for a property by property ID.', input_schema: { type: 'object', properties: { property_id: { type: 'string' } }, required: ['property_id'] } },
+  { name: 'rv_get_wo_history', description: 'Look up historical work orders for a property from Aloe records going back to 2018. Use this when triaging a new WO to check: has this issue happened before? Who fixed it last time? Is there a home warranty on file? What did it cost? Pass the street address (e.g. "1033 W Pecos Ave"). Optionally filter by trade keyword (e.g. "HVAC", "roof", "plumbing").', input_schema: { type: 'object', properties: { address: { type: 'string', description: 'Street address to search e.g. "1033 W Pecos Ave"' }, trade: { type: 'string', description: 'Optional trade filter e.g. "HVAC", "roof", "plumbing", "appliance"' }, limit: { type: 'number', description: 'Max results to return (default 10)' } }, required: ['address'] } },
   { name: 'rv_get_notes', description: 'Get notes on a Rentvine work order by WO number.', input_schema: { type: 'object', properties: { wo_number: { type: 'string' } }, required: ['wo_number'] } },
   { name: 'rv_get_lease_tenants', description: 'Get tenant contact info for a lease from Rentvine.', input_schema: { type: 'object', properties: { lease_id: { type: 'string' } }, required: ['lease_id'] } },
 ];
@@ -262,6 +263,13 @@ async function executeAriTool(toolName, input) {
       case 'rv_get_property_units': {
         const res = await hubRequest('GET', `/api/rentvine/properties/${input.property_id}/units`);
         return res.status === 200 ? res.body : { error: `Hub ${res.status}` };
+      }
+      case 'rv_get_wo_history': {
+        const params = new URLSearchParams({ address: input.address, limit: input.limit || 10 });
+        if (input.trade) params.set('trade', input.trade);
+        const r = await hubRequest('GET', `/api/wo-history?${params}`);
+        if (r.status !== 200) return { error: 'WO history lookup failed' };
+        return r.body;
       }
       case 'rv_get_notes': {
         const res = await hubRequest('GET', `/api/rentvine/work-orders/${input.wo_number}/notes`);
