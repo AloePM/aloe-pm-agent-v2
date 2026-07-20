@@ -103,6 +103,41 @@ const IVY_TOOLS = [
       },
       required: ['search']
     }
+  },
+  {
+    name: 'get_showing_history',
+    description: 'Get showing history for a property — all prospects who toured or scheduled a tour, with timestamps, outcomes (attended/no-show/cancelled/rescheduled), and current stage. Use when asked about showings, tours, or who has visited a property.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        search: { type: 'string', description: 'Property address to search for showing history' }
+      },
+      required: ['search']
+    }
+  },
+  {
+    name: 'get_leads_by_property',
+    description: 'Get all active leads (prospects) for a property from the Aptly Renter Leads board. Shows prospect name, current stage, last action, and contact info. Use to see who is interested in a property or to identify who to follow up with.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        search: { type: 'string', description: 'Property address to find leads for' },
+        stage: { type: 'string', description: 'Optional stage filter: Nurturing, Engaged, Scheduled Tour, Tour Completed, Applied' }
+      },
+      required: ['search']
+    }
+  },
+  {
+    name: 'send_followup_sms',
+    description: 'Send a follow-up SMS to a prospect via Quo. Use after showings, to re-engage cold leads, or when staff asks Ivy to reach out. Always confirm the message content before sending.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        to: { type: 'string', description: 'Phone number to send to' },
+        message: { type: 'string', description: 'SMS message content' }
+      },
+      required: ['to', 'message']
+    }
   }
 ];
 
@@ -281,6 +316,85 @@ async function executeIvyTool(name, input) {
         petPolicy: match.petPolicy,
         owner: match.owners?.[0]?.name
       });
+    }
+    case 'get_showing_history': {
+      const searchTerm = (input.search || '').toLowerCase();
+      // Search all cards on Renter Leads board for this property
+      let allCards = [];
+      for (let pg = 0; pg < 15; pg++) {
+        const r = await fetch(`https://core-api.getaptly.com/api/board/4EMDSYKirhQaNdQKz?page=${pg}&pageSize=50`, {
+          headers: { 'x-token': process.env.APTLY_TOKEN }
+        });
+        if (!r.ok) break;
+        const data = await r.json();
+        const arr = data.data || [];
+        if (!arr.length) break;
+        allCards = allCards.concat(arr);
+      }
+      // Filter cards that match the property and have been to Scheduled Tour or Tour Completed
+      const matches = allCards.filter(c => {
+        const cardName = (c.name || '').toLowerCase();
+        const unitName = (c.unit?.[0]?.name || '').toLowerCase();
+        const propMatch = cardName.includes(searchTerm.slice(0, 12)) || unitName.includes(searchTerm.slice(0, 12));
+        const hadShowing = (c.stageHistory || []).some(s => ['Scheduled Tour', 'Tour Completed'].includes(s.stage)) || ['Scheduled Tour', 'Tour Completed'].includes(c.stage);
+        return propMatch && hadShowing;
+      });
+      return JSON.stringify({
+        property: input.search,
+        totalShowings: matches.length,
+        showings: matches.map(c => ({
+          prospect: c.name,
+          currentStage: c.stage,
+          stageHistory: c.stageHistory || [],
+          lastAction: c.lastAction,
+          contact: c.contact,
+          cardId: c.cardId || c._id
+        }))
+      });
+    }
+    case 'get_leads_by_property': {
+      const searchTerm = (input.search || '').toLowerCase();
+      const stageFilter = input.stage?.toLowerCase();
+      let allCards = [];
+      for (let pg = 0; pg < 15; pg++) {
+        const r = await fetch(`https://core-api.getaptly.com/api/board/4EMDSYKirhQaNdQKz?page=${pg}&pageSize=50`, {
+          headers: { 'x-token': process.env.APTLY_TOKEN }
+        });
+        if (!r.ok) break;
+        const data = await r.json();
+        const arr = data.data || [];
+        if (!arr.length) break;
+        allCards = allCards.concat(arr);
+      }
+      const matches = allCards.filter(c => {
+        const cardName = (c.name || '').toLowerCase();
+        const unitName = (c.unit?.[0]?.name || '').toLowerCase();
+        const propMatch = cardName.includes(searchTerm.slice(0, 12)) || unitName.includes(searchTerm.slice(0, 12));
+        const stageMatch = !stageFilter || (c.stage || '').toLowerCase().includes(stageFilter);
+        return propMatch && stageMatch && !c.archived;
+      });
+      return JSON.stringify({
+        property: input.search,
+        totalLeads: matches.length,
+        leads: matches.map(c => ({
+          prospect: c.name,
+          stage: c.stage,
+          lastAction: c.lastAction,
+          contact: c.contact,
+          stageUpdatedAt: c.stageUpdatedAt,
+          cardId: c.cardId || c._id
+        }))
+      });
+    }
+    case 'send_followup_sms': {
+      const r = await fetch('https://hub.aloepm.com/api/quo/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-hub-token': process.env.HUB_INTERNAL_SECRET },
+        body: JSON.stringify({ to: input.to, message: input.message, from: 'PNRRARIpQO' })
+      });
+      const result = await r.json();
+      if (!r.ok) return JSON.stringify({ error: `SMS failed: ${r.status}`, detail: result });
+      return JSON.stringify({ success: true, to: input.to, message: input.message });
     }
     default:
       return JSON.stringify({ error: `Unknown tool: ${name}` });
