@@ -178,23 +178,19 @@ async function executeIvyTool(name, input) {
       return JSON.stringify({ count: results.length, units: formatted });
     }
     case 'get_property_details': {
-      // Fetch all properties and filter client-side (server search param ignored)
-      const searchTerm = (input.search || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      let allProps = [];
-      for (let pg = 1; pg <= 10; pg++) {
-        const data = await rvFetch('/properties/export', { pageSize: 100, page: pg });
-        const batch = Array.isArray(data) ? data : (data.data || []);
-        if (!batch.length) break;
-        allProps = allProps.concat(batch);
-        if (batch.length < 100) break;
-      }
-      // Find best match by address
-      const match = allProps.find(p => {
-        const addr = ((p.property || p).address || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        return addr.includes(searchTerm) || searchTerm.includes(addr.slice(0, 10));
+      // Use Hub property-lookup for fast address search
+      const shortQ = (input.search || '').split(',')[0].replace(/(gilbert|chandler|mesa|phoenix|scottsdale|maricopa|tempe|casa grande|az|arizona)/gi, '').trim().slice(0, 20);
+      const hubRes = await fetch(`https://hub.aloepm.com/api/rentvine/property-lookup?q=${encodeURIComponent(shortQ)}`, {
+        headers: { 'x-hub-token': process.env.HUB_INTERNAL_SECRET }
       });
-      if (!match) return JSON.stringify({ error: `Property not found: ${input.search}` });
-      const prop = match.property || match;
+      const hubData = await hubRes.json();
+      const hubProps = hubData.properties || [];
+      if (!hubProps.length) return JSON.stringify({ error: `Property not found: ${input.search}` });
+      const hubProp = hubProps[0];
+      const propID = hubProp.propertyId;
+      // Get full property details from Rentvine
+      const propData = await rvFetch(`/properties/${propID}`);
+      const prop = propData.property || propData;
       // Get units for this property
       let unitData = null;
       if (prop.propertyID) {
