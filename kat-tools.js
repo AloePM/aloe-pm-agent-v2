@@ -83,15 +83,21 @@ async function executeKatTool(toolName, input) {
         });
         const data = await r.json();
         const lease = data.lease || data;
-        // Get tenants
+        // Get tenants — first try lease.tenants array (names directly on lease record)
         let tenants = [];
-        try {
-          const tr = await fetch(`${RENTVINE_BASE}/leases/${input.leaseID}/tenants`, {
-            headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT }
-          });
-          const td = await tr.json();
-          tenants = (Array.isArray(td) ? td : (td.data || [])).map(t => t.name || t.displayName);
-        } catch(e) {}
+        if (Array.isArray(lease.tenants) && lease.tenants.length) {
+          tenants = lease.tenants.filter(Boolean);
+        } else {
+          // Fallback: call /tenants endpoint
+          try {
+            const tr = await fetch(`${RENTVINE_BASE}/leases/${input.leaseID}/tenants`, {
+              headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT }
+            });
+            const td = await tr.json();
+            const arr = Array.isArray(td) ? td : (td.data || []);
+            tenants = arr.map(t => t.contact?.name || t.name || t.displayName || '').filter(Boolean);
+          } catch(e) {}
+        }
         return { leaseID: lease.leaseID, startDate: lease.startDate, endDate: lease.endDate, moveInDate: lease.moveInDate, status: lease.primaryLeaseStatusID, tenants };
       }
       case 'rv_add_lease_charge': {
