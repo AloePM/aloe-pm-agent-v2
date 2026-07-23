@@ -579,6 +579,6 @@ function scheduleFollowUp() {
   const WEBHOOK_PORT = process.env.WEBHOOK_PORT || 3001;
   webhookApp.listen(WEBHOOK_PORT, () => {
     console.log(`🪝 Webhook server listening on port ${WEBHOOK_PORT}`);
-    console.log(`   Rentvine webhook URL: http://34.16.238.69:${WEBHOOK_PORT}/webhook/rentvine`);
+    console.log(`   Rentvine webhook URL: http://34.16.157.83:${WEBHOOK_PORT}/webhook/rentvine`);
   });
 })();
