@@ -45,6 +45,27 @@ function getTools() {
   } catch (e) {
     console.error('getTools rex failed:', e.message);
   }
+  try {
+    delete require.cache[require.resolve('./bo-tools')];
+    const { BO_TOOLS } = require('./bo-tools');
+    tools.bo = BO_TOOLS.map(t => ({ name: t.name, description: t.description }));
+  } catch (e) {
+    console.error('getTools bo failed:', e.message);
+  }
+  try {
+    delete require.cache[require.resolve('./ivy-tools')];
+    const { IVY_TOOLS } = require('./ivy-tools');
+    tools.ivy = IVY_TOOLS.map(t => ({ name: t.name, description: t.description }));
+  } catch (e) {
+    console.error('getTools ivy failed:', e.message);
+  }
+  try {
+    delete require.cache[require.resolve('./mary-tools')];
+    const { MARY_TOOLS } = require('./mary-tools');
+    tools.mary = MARY_TOOLS.map(t => ({ name: t.name, description: t.description }));
+  } catch (e) {
+    console.error('getTools mary failed:', e.message);
+  }
   return tools;
 }
 
