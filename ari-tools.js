@@ -85,7 +85,6 @@ async function executeAriTool(toolName, input) {
   try {
     switch(toolName) {
       case 'aptly_search_cards': {
-        const APTLY_TOK = 'oSWZZYDMlRZjUmnp6qb4yCr3EW3yKRO9Atns2VCANso=';
         const q = input.query || '';
         const stage = input.stage || '';
         const limit = parseInt(input.limit || '20');
@@ -94,7 +93,7 @@ async function executeAriTool(toolName, input) {
           // Search all pages for WO number in name
           for (let pg = 0; pg < 20; pg++) {
             const rp = await fetch(`https://core-api.getaptly.com/api/board/workOrder?page=${pg}&pageSize=100`, {
-              headers: { 'x-token': APTLY_TOK }
+              headers: { 'x-token': APTLY_TOKEN }
             });
             const dp = await rp.json();
             const cp = Array.isArray(dp) ? dp : (dp.data || []);
@@ -107,7 +106,7 @@ async function executeAriTool(toolName, input) {
         }
         // Search by name (WO number + address in title)
         const r = await fetch(`https://core-api.getaptly.com/api/board/workOrder?page=0&pageSize=100&search=${encodeURIComponent(q)}`, {
-          headers: { 'x-token': APTLY_TOK }
+          headers: { 'x-token': APTLY_TOKEN }
         });
         const data = await r.json();
         let cards = Array.isArray(data) ? data : (data.data || []);
@@ -172,12 +171,11 @@ async function executeAriTool(toolName, input) {
         };
         const fieldKey = fieldMap[input.field_name.toLowerCase()] || input.field_name;
         // Call Aptly directly with correct body format
-        const APTLY_TOK = 'oSWZZYDMlRZjUmnp6qb4yCr3EW3yKRO9Atns2VCANso=';
         const body = { _id: input.card_id };
         body[fieldKey] = input.value;
         const r = await fetch('https://core-api.getaptly.com/api/board/workOrder', {
           method: 'POST',
-          headers: { 'x-token': APTLY_TOK, 'Content-Type': 'application/json' },
+          headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
         const data = await r.json();
@@ -197,7 +195,6 @@ async function executeAriTool(toolName, input) {
         }
         if (!vendorId) return { error: 'Vendor not found in Aptly contacts' };
         // Call Aptly directly with vendor ID
-        const APTLY_TOK = 'oSWZZYDMlRZjUmnp6qb4yCr3EW3yKRO9Atns2VCANso=';
         // Get vendor name for full object
         let vendorName = input.vendor_name || '';
         // Duogram = first letter of first two words
@@ -212,7 +209,7 @@ async function executeAriTool(toolName, input) {
         if (input.is_reassign) body['39gNjdkmpFpoPLzth'] = true;
         const r = await fetch('https://core-api.getaptly.com/api/board/workOrder', {
           method: 'POST',
-          headers: { 'x-token': APTLY_TOK, 'Content-Type': 'application/json' },
+          headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
         const data = await r.json();
