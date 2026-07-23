@@ -340,7 +340,6 @@ async function executeAriTool(toolName, input) {
         return { success: true, to: input.to, message: input.message };
       }
       case 'rv_dispatch_vendor': {
-        const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
         // Step 1: Find vendor by name — try progressively shorter search terms
         const searchTerms = [
           input.vendor_name,
@@ -349,8 +348,8 @@ async function executeAriTool(toolName, input) {
         ].filter((v,i,a) => v && a.indexOf(v) === i);
         let items = [];
         for (const term of searchTerms) {
-          const sr = await fetch(`https://aloepm.rentvine.com/api/manager/contacts?contactType=vendor&search=${encodeURIComponent(term)}&pageSize=10`, {
-            headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm' }
+          const sr = await fetch(`${RENTVINE_BASE}/contacts?contactType=vendor&search=${encodeURIComponent(term)}&pageSize=10`, {
+            headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT }
           });
           const sd = await sr.json();
           items = Array.isArray(sd) ? sd : (sd.data||[]);
@@ -360,9 +359,9 @@ async function executeAriTool(toolName, input) {
         const vendorContactID = items[0].contact?.contactID;
         const vendorName = items[0].contact?.name || input.vendor_name;
         // Step 2: Assign vendor to WO
-        const ar = await fetch(`https://aloepm.rentvine.com/api/manager/maintenance/work-orders/${input.rv_wo_id}`, {
+        const ar = await fetch(`${RENTVINE_BASE}/maintenance/work-orders/${input.rv_wo_id}`, {
           method: 'POST',
-          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm', 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' },
           body: JSON.stringify({ vendorContactID: String(vendorContactID), sendVendorNotification: input.send_notification !== false })
         });
         const ad = await ar.json();
@@ -391,9 +390,8 @@ async function executeAriTool(toolName, input) {
         return { trade: trade.name, zone: input.zone || 'any', vendors: matched.slice(0,3).map(v => ({ name: v.name, phone: v.phone, zones: v.zones, notes: v.notes, priority: v.priority })), instruction: 'Vendors are sorted by priority, lowest number first. Always dispatch the first vendor listed unless its notes state a specific reason not to (e.g. unavailable, wrong scope, requires pre-approval).' };
       }
       case 'rv_search_vendor': {
-        const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
-        const r = await fetch(`https://aloepm.rentvine.com/api/manager/contacts?contactType=vendor&search=${encodeURIComponent(input.name)}&pageSize=10`, {
-          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm' }
+        const r = await fetch(`${RENTVINE_BASE}/contacts?contactType=vendor&search=${encodeURIComponent(input.name)}&pageSize=10`, {
+          headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT }
         });
         const d = await r.json();
         const items = Array.isArray(d) ? d : (d.data||[]);
@@ -401,11 +399,10 @@ async function executeAriTool(toolName, input) {
         return { vendors };
       }
       case 'rv_assign_vendor': {
-        const RV_AUTH = Buffer.from('2586bdded08f499bb2057e373fd662f7:81f3aa4cb0434162aab8a27702f089b8').toString('base64');
         const body = { vendorContactID: String(input.vendor_contact_id), sendVendorNotification: input.send_notification !== false };
-        const r = await fetch(`https://aloepm.rentvine.com/api/manager/maintenance/work-orders/${input.rv_wo_id}`, {
+        const r = await fetch(`${RENTVINE_BASE}/maintenance/work-orders/${input.rv_wo_id}`, {
           method: 'POST',
-          headers: { 'Authorization': `Basic ${RV_AUTH}`, 'X-Rentvine-Account': 'aloepm', 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         });
         const d = await r.json();
