@@ -23,6 +23,27 @@ function getTools() {
   } catch (e) {
     console.error('getTools remy failed:', e.message);
   }
+  try {
+    delete require.cache[require.resolve('./ari-tools')];
+    const { ARI_TOOLS } = require('./ari-tools');
+    tools.ari = ARI_TOOLS.map(t => ({ name: t.name, description: t.description }));
+  } catch (e) {
+    console.error('getTools ari failed:', e.message);
+  }
+  try {
+    delete require.cache[require.resolve('./kat-tools')];
+    const { KAT_TOOLS } = require('./kat-tools');
+    tools.kat = KAT_TOOLS.map(t => ({ name: t.name, description: t.description }));
+  } catch (e) {
+    console.error('getTools kat failed:', e.message);
+  }
+  try {
+    delete require.cache[require.resolve('./rex-tools')];
+    const { REX_TOOLS } = require('./rex-tools');
+    tools.rex = REX_TOOLS.map(t => ({ name: t.name, description: t.description }));
+  } catch (e) {
+    console.error('getTools rex failed:', e.message);
+  }
   return tools;
 }
 
