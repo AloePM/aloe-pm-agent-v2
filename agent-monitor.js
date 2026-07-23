@@ -14,6 +14,17 @@ function getStatus() {
     memory: p.monit.memory,
   }));
 }
+function getTools() {
+  const tools = {};
+  try {
+    delete require.cache[require.resolve('./remy-tools')];
+    const { REMY_TOOLS } = require('./remy-tools');
+    tools.remy = REMY_TOOLS.map(t => ({ name: t.name, description: t.description }));
+  } catch (e) {
+    console.error('getTools remy failed:', e.message);
+  }
+  return tools;
+}
 
 app.get('/status', (req, res) => {
   try {
@@ -26,10 +37,11 @@ app.get('/status', (req, res) => {
 async function pushStatus() {
   try {
     const procs = getStatus();
+    const tools = getTools();
     await fetch(HUB_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-agent-key': 'aloe-internal' },
-      body: JSON.stringify({ procs, pushedAt: new Date().toISOString() }),
+      body: JSON.stringify({ procs, tools, pushedAt: new Date().toISOString() }),
     });
     console.log('Status pushed to hub:', new Date().toISOString());
   } catch (err) {

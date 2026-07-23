@@ -6,7 +6,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const { APTLY_TOOLS, executeHubTool } = require('./hub-client');
+const { REX_TOOLS, executeRexTool } = require('./rex-tools');
 
 const repoPath = process.env.ALOE_REPO_PATH || path.join(process.env.HOME, 'aloe-pm-agent-v2');
 const HOA_CHANNEL_ID = process.env.HOA_NOTICES_CHANNEL_ID;
@@ -233,7 +233,7 @@ async function runHOAProcess(base64Image, mimeType, event, client) {
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       system: HOA_SYSTEM_PROMPT,
-      tools: APTLY_TOOLS,
+      tools: REX_TOOLS,
       messages,
     });
 
@@ -244,7 +244,7 @@ async function runHOAProcess(base64Image, mimeType, event, client) {
       for (const block of response.content) {
         if (block.type === 'tool_use') {
           console.log(`Rex HOA → ${block.name}:`, JSON.stringify(block.input).slice(0, 120));
-          const result = await executeHubTool(block.name, block.input);
+          const result = await executeRexTool(block.name, block.input);
           toolResults.push({
             type: 'tool_result',
             tool_use_id: block.id,
@@ -344,7 +344,7 @@ app.event('app_mention', async ({ event, client, say }) => {
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
         system: SYSTEM_PROMPT,
-        tools: APTLY_TOOLS,
+        tools: REX_TOOLS,
         messages: mentionMessages,
       });
       mentionMessages.push({ role: 'assistant', content: response.content });
@@ -353,7 +353,7 @@ app.event('app_mention', async ({ event, client, say }) => {
         for (const block of response.content) {
           if (block.type === 'tool_use') {
             console.log('Rex mention tool:', block.name, JSON.stringify(block.input).slice(0, 100));
-            const result = await executeHubTool(block.name, block.input);
+            const result = await executeRexTool(block.name, block.input);
             toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) });
           }
         }

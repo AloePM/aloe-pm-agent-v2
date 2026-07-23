@@ -30,6 +30,36 @@ const KAT_TOOLS = [
     name: 'aptly_search_property',
     description: 'Search for a property in Aptly by address. Use as fallback when rv_search_property returns no results. Returns unit and building IDs.',
     input_schema: { type: 'object', properties: { address: { type: 'string', description: 'Property address to search for' } }, required: ['address'] }
+  },
+  {
+    name: 'aptly_create_hoa_card',
+    description: 'Create a new HOA Violation card in Aptly on the HOA Violations board, with owner and resident contacts auto-linked from the building record. Never leave owner_tenant_responsible or violation_issue blank.',
+    input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Address – HOA Warning/Violation: [issue]' }, unit_aptly_id: { type: 'string' }, unit_aptly_name: { type: 'string' }, building_aptly_id: { type: 'string' }, building_aptly_name: { type: 'string' }, due_date: { type: 'string' }, violation_issue: { type: 'string' }, warning_or_fine: { type: 'string', enum: ['Warning', 'Fine'] }, fine_amount: { type: 'number' }, owner_tenant_responsible: { type: 'string', enum: ['Owner', 'Tenant'] }, violation_exact_wording: { type: 'string' }, mirror_hoa_name: { type: 'string' }, mirror_hoa_number: { type: 'string' }, mirror_hoa_email: { type: 'string' }, mirror_hoa_website: { type: 'string' }, tenant_phone_1: { type: 'string' }, tenant_phone_2: { type: 'string' } }, required: ['title', 'violation_issue', 'warning_or_fine', 'owner_tenant_responsible'] }
+  },
+  {
+    name: 'aptly_search_cards',
+    description: 'Search HOA Violation cards in Aptly by address or tenant name.',
+    input_schema: { type: 'object', properties: { query: { type: 'string' }, stage: { type: 'string' }, limit: { type: 'string' } }, required: [] }
+  },
+  {
+    name: 'aptly_get_card',
+    description: 'Get full details of an HOA Violation card by ID.',
+    input_schema: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] }
+  },
+  {
+    name: 'aptly_update_card',
+    description: 'Update a field on an HOA Violation card (e.g. Violation Issue, Warning or Fine, Owner/Tenant Responsible, Resolved?, Stage).',
+    input_schema: { type: 'object', properties: { card_id: { type: 'string' }, field_name: { type: 'string' }, value: {} }, required: ['card_id','field_name','value'] }
+  },
+  {
+    name: 'aptly_add_comment',
+    description: 'Add a comment to an HOA Violation card.',
+    input_schema: { type: 'object', properties: { card_id: { type: 'string' }, content: { type: 'string' } }, required: ['card_id','content'] }
+  },
+  {
+    name: 'rv_get_lease_balance',
+    description: 'Get the outstanding balance due on a Rentvine lease.',
+    input_schema: { type: 'object', properties: { lease_id: { type: 'string' } }, required: ['lease_id'] }
   }
 ];
 
@@ -128,6 +158,102 @@ async function executeKatTool(toolName, input) {
           if (res2.status === 200 && res2.body?.unit_aptly_id) return res2.body;
         }
         return { unit_aptly_id: null, building_aptly_id: null };
+      }
+      case 'aptly_create_hoa_card': {
+        const cardBody = {
+          name: input.title || '',
+          description: input.violation_exact_wording || '',
+          stage: 'HOA Violation/Notice received',
+          createdAt: new Date().toISOString(),
+          stageUpdatedAt: new Date().toISOString(),
+          'Sz5KNfAAMDuThngyG': input.violation_issue || '',
+          'cPZmmmjQwYJriT53Y': input.warning_or_fine || '',
+          'iyZj4A2TfKiHRtF7i': input.owner_tenant_responsible || '',
+          'dueAt': input.due_date || null,
+          'nMmfRWZyAFDFNW4mo': input.tenant_phone_1 || '',
+          'iSifhPDzhrNrMAZXx': input.tenant_phone_2 || '',
+          'BvfLpebk484dEsd4Y': input.mirror_hoa_name || '',
+          'T3tGDpxosQnR7u3NA': input.mirror_hoa_number || '',
+          '2u8QFWLBDrf6tC9P9': input.mirror_hoa_email || '',
+          'dMNaxpq2zPTY9rhaJ': input.mirror_hoa_website || '',
+        };
+        if (input.fine_amount) cardBody['RevYLWzf8Yv2QtwK9'] = Number(input.fine_amount);
+        if (input.unit_aptly_id) cardBody['unit'] = [{ _id: input.unit_aptly_id, name: input.unit_aptly_name || '', duogram: (input.unit_aptly_name||'').replace(/[^A-Z0-9]/g,'').slice(0,2) }];
+        if (input.building_aptly_id) {
+          cardBody['location'] = [{ _id: input.building_aptly_id, name: input.building_aptly_name || '', duogram: (input.building_aptly_name||'').replace(/[^A-Z0-9]/g,'').slice(0,2) }];
+          try {
+            const bldRes = await fetch(`https://core-api.getaptly.com/api/board/location/${input.building_aptly_id}`, { headers: { 'x-token': APTLY_TOKEN } });
+            const bldData = await bldRes.json();
+            const bld = bldData.data || bldData;
+            const owners = bld.owners || [];
+            const residents = bld.relatedContacts || [];
+            const managers = bld.managers || [];
+            if (owners.length) cardBody['nxo7y67goRt5L3jah'] = owners;
+            if (residents.length) cardBody['xhXRQJ2JfCSDWC43q'] = residents;
+            const combined = [...owners, ...residents, ...managers];
+            if (combined.length) cardBody['relatedContacts'] = combined;
+          } catch(e) { console.error('HOA card building-contact lookup error:', e.message); }
+        }
+        const r = await fetch('https://core-api.getaptly.com/api/board/8bazEHshdZNuMKCFE', {
+          method: 'POST', headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(cardBody)
+        });
+        const result = await r.json();
+        if (!r.ok) return { error: `Aptly ${r.status}`, detail: result };
+        return { success: true, cardId: result.data?._id || result.cardId || result._id };
+      }
+      case 'aptly_search_cards': {
+        const q = input.query || '';
+        const stage = input.stage || '';
+        const limit = parseInt(input.limit || '20');
+        const r = await fetch(`https://core-api.getaptly.com/api/board/8bazEHshdZNuMKCFE?page=0&pageSize=100&search=${encodeURIComponent(q)}`, { headers: { 'x-token': APTLY_TOKEN } });
+        const data = await r.json();
+        let cards = Array.isArray(data) ? data : (data.data || []);
+        cards = cards.filter(c => {
+          const nameMatch = !q || (c.name||'').toLowerCase().includes(q.toLowerCase());
+          const stageMatch = !stage || c.stage === stage;
+          return nameMatch && stageMatch;
+        });
+        return { items: cards.slice(0, limit).map(c => ({ id: c._id, title: c.name||'', stage: c.stage||'', address: c.unit?.[0]?.name || c.location?.[0]?.name || '', description: c.description || '' })) };
+      }
+      case 'aptly_get_card': {
+        const r = await fetch(`https://core-api.getaptly.com/api/board/8bazEHshdZNuMKCFE/${input.card_id}`, { headers: { 'x-token': APTLY_TOKEN } });
+        const data = await r.json();
+        const c = data.data || data;
+        if (!r.ok) return { error: `Aptly ${r.status}` };
+        return {
+          id: c.cardId, title: c.name, stage: c.stage,
+          violationIssue: c['Sz5KNfAAMDuThngyG'] || '',
+          warningOrFine: c['cPZmmmjQwYJriT53Y'] || '',
+          ownerTenantResponsible: c['iyZj4A2TfKiHRtF7i'] || '',
+          resolved: c['77xEQBRT6FRGT58wZ'] || '',
+          address: c.unit?.[0]?.name || c.location?.[0]?.name || '',
+        };
+      }
+      case 'aptly_update_card': {
+        const fieldMap = {
+          'violation issue': 'Sz5KNfAAMDuThngyG',
+          'warning or fine': 'cPZmmmjQwYJriT53Y',
+          'owner/tenant responsible': 'iyZj4A2TfKiHRtF7i',
+          'owner tenant responsible': 'iyZj4A2TfKiHRtF7i',
+          'resolved': '77xEQBRT6FRGT58wZ',
+          'resolved?': '77xEQBRT6FRGT58wZ',
+          'stage': 'stage',
+        };
+        const fieldKey = fieldMap[input.field_name.toLowerCase()] || input.field_name;
+        const body = { _id: input.card_id };
+        body[fieldKey] = input.value;
+        const r = await fetch('https://core-api.getaptly.com/api/board/8bazEHshdZNuMKCFE', { method: 'POST', headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await r.json();
+        return r.ok ? { success: true } : { error: 'Aptly error', detail: data };
+      }
+      case 'aptly_add_comment': {
+        const r = await fetch(`https://core-api.getaptly.com/api/board/8bazEHshdZNuMKCFE/${input.card_id}/comment`, { method: 'POST', headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: input.content }) });
+        return r.ok ? { success: true } : { error: `Aptly ${r.status}` };
+      }
+      case 'rv_get_lease_balance': {
+        const r = await fetch(`${RENTVINE_BASE}/leases/${input.lease_id}/balance-due`, { headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT } });
+        const data = await r.json();
+        return r.ok ? data : { error: `Rentvine ${r.status}` };
       }
       default: return { error: `Unknown Kat tool: ${toolName}` };
     }

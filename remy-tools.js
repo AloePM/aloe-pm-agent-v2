@@ -1,5 +1,44 @@
 // ── Remy-specific tools and handlers ──────────────────────────────────────
-const { hubRequest } = require('./hub-client');
+const RENTVINE_BASE = `https://${process.env.RENTVINE_ACCOUNT}.rentvine.com/api/manager`;
+const RENTVINE_AUTH = Buffer.from(`${process.env.RENTVINE_API_KEY}:${process.env.RENTVINE_API_SECRET}`).toString('base64');
+const APTLY_TOKEN = process.env.APTLY_TOKEN;
+
+async function rvPropertyLookup(q) {
+  try {
+    const qLower = (q || '').toLowerCase();
+    let allProps = [];
+    for (let page = 1; page <= 10; page++) {
+      const url = `${RENTVINE_BASE}/properties/export?pageSize=500&page=${page}`;
+      const r = await fetch(url, { headers: { Authorization: `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT } });
+      const batch = await r.json();
+      const items = Array.isArray(batch) ? batch : (batch.data || batch.results || []);
+      if (!items.length) break;
+      allProps = allProps.concat(items);
+      if (items.length < 500) break;
+    }
+    const stripDirections = s => s.replace(/\b(north|south|east|west|n|s|e|w)\b\.?/gi, '').replace(/\s+/g, ' ').trim();
+    const qClean = stripDirections(qLower);
+    const filtered = qLower ? allProps.filter(item => {
+      const p = item.property || item;
+      const addr = stripDirections((p.address || '').toLowerCase());
+      const street = stripDirections((p.streetName || '').toLowerCase());
+      const num = String(p.streetNumber || '').toLowerCase();
+      const queryParts = qClean.split(/\s+/);
+      const queryNum = queryParts.find(x => /^\d+$/.test(x)) || '';
+      const queryStreet = queryParts.filter(x => !/^\d+$/.test(x)).join(' ');
+      const numMatch = !queryNum || num === queryNum;
+      const streetMatch = !queryStreet || addr.includes(queryStreet) || street.includes(queryStreet);
+      return numMatch && streetMatch;
+    }) : allProps;
+    const enriched = filtered.slice(0, 10).map(item => {
+      const p = item.property || item;
+      return { propertyId: p.propertyID, leaseId: p.leaseID || null, address: p.address, city: p.city, state: p.stateID, zip: p.postalCode };
+    });
+    return { properties: enriched };
+  } catch(e) {
+    return { error: e.message };
+  }
+}
 
 const REMY_TOOLS = [
   { name: 'aptly_search_cards', description: 'Search Aptly Tenant Renewals board cards by tenant name, address, or WO number.', input_schema: { type: 'object', properties: { query: { type: 'string' }, stage: { type: 'string' }, limit: { type: 'string' } }, required: [] } },
@@ -15,38 +54,57 @@ async function executeRemyTool(toolName, input) {
   try {
     switch(toolName) {
       case 'aptly_search_cards': {
-        const params = new URLSearchParams();
-        if (input.query) params.set('query', input.query);
-        if (input.stage) params.set('stage', input.stage);
-        if (input.limit) params.set('limit', input.limit);
-        const res = await hubRequest('GET', `/api/aptly/cards/search?${params}`);
-        return res.status === 200 ? res.body : { error: `Hub ${res.status}` };
+        const q = input.query || '';
+        const stage = input.stage || '';
+        const limit = parseInt(input.limit || '20');
+        const r = await fetch(`https://core-api.getaptly.com/api/board/workOrder?page=0&pageSize=100&search=${encodeURIComponent(q)}`, { headers: { 'x-token': APTLY_TOKEN } });
+        const data = await r.json();
+        let cards = Array.isArray(data) ? data : (data.data || []);
+        cards = cards.filter(c => {
+          const nameMatch = !q || (c.name||'').toLowerCase().includes(q.toLowerCase());
+          const stageMatch = !stage || c.stage === stage;
+          return nameMatch && stageMatch;
+        });
+        return { items: cards.slice(0, limit).map(c => ({ id: c._id, title: c.name||'', stage: c.stage||'', priority: c.priority||'', address: c.unit?.[0]?.name || c.location?.[0]?.name || '', description: c.description || '' })) };
       }
       case 'aptly_get_card': {
-        const res = await hubRequest('GET', `/api/aptly/cards/${input.card_id}`);
-        return res.status === 200 ? res.body : { error: `Hub ${res.status}` };
+        const r = await fetch(`https://core-api.getaptly.com/api/board/workOrder/${input.card_id}`, { headers: { 'x-token': APTLY_TOKEN } });
+        const data = await r.json();
+        const c = data.data || data;
+        if (!r.ok) return { error: `Aptly ${r.status}` };
+        return { id: c.cardId, title: c.name, stage: c.stage, priority: c.priority, description: c.description, address: c.address, rentvineId: c.rentvineId };
       }
       case 'aptly_update_card': {
-        const res = await hubRequest('POST', `/api/aptly/cards/${input.card_id}`, { field_name: input.field_name, value: input.value });
-        return res.status === 200 || res.status === 201 ? { success: true } : { error: `Hub ${res.status}` };
+        const fieldMap = { 'issue type': 'nfEujqs3ujMNgMFom', 'maintenance category': 'nfEujqs3ujMNgMFom', 'home warranty': '3PvcEJoFBQLnjHnd6', 'stage': 'stage', 'priority': 'priority' };
+        const fieldKey = fieldMap[input.field_name.toLowerCase()] || input.field_name;
+        const body = { _id: input.card_id };
+        body[fieldKey] = input.value;
+        const r = await fetch('https://core-api.getaptly.com/api/board/workOrder', { method: 'POST', headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await r.json();
+        return r.ok ? { success: true } : { error: 'Aptly error', detail: data };
       }
       case 'aptly_add_comment': {
-        const res = await hubRequest('POST', `/api/aptly/cards/${input.card_id}/comment`, { content: input.content });
-        return res.status === 200 || res.status === 201 ? { success: true } : { error: `Hub ${res.status}` };
+        const r = await fetch(`https://core-api.getaptly.com/api/board/workOrder/${input.card_id}/comment`, { method: 'POST', headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: input.content }) });
+        return r.ok ? { success: true } : { error: `Aptly ${r.status}` };
       }
       case 'rv_search_property': {
-        const res = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(input.address)}`);
-        return res.status === 200 ? res.body : { error: `Hub ${res.status}` };
+        return await rvPropertyLookup(input.address);
       }
       case 'rv_get_lease_tenants': {
-        const res = await hubRequest('GET', `/api/rentvine/leases/${input.lease_id}/tenants`);
-        return res.status === 200 ? res.body : { error: `Hub ${res.status}` };
+        const r = await fetch(`${RENTVINE_BASE}/leases/${input.lease_id}/tenants`, { headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT } });
+        const data = await r.json();
+        if (!r.ok) return { error: `Rentvine ${r.status}` };
+        const arr = Array.isArray(data) ? data : (data.data || []);
+        const tenants = arr.map(t => ({ name: t.contact?.fullname || t.contact?.name || t.name || '', phone: t.contact?.phone?.[0]?.number || t.phone || null, email: t.contact?.email?.[0] || t.email || null }));
+        return { tenants };
       }
       case 'send_sms': {
-        const res = await hubRequest('POST', '/api/quo/send-sms', { to: input.to, message: input.message });
-        if (res.status !== 200 && res.status !== 201) return { error: `Hub ${res.status}` };
+        const QUO_TOKEN = process.env.QUO_API_TOKEN;
+        const r = await fetch('https://api.quo.com/v1/messages', { method: 'POST', headers: { 'Authorization': QUO_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: input.message, from: '+16028549884', to: [input.to], phoneNumberId: 'PNRRARIpQO' }) });
+        const data = await r.json();
+        if (!r.ok) return { error: `Quo ${r.status}`, detail: data };
         if (input.card_id) {
-          await hubRequest('POST', `/api/aptly/cards/${input.card_id}/comment`, { content: `📱 SMS sent to ${input.recipient_type || 'tenant'} (${input.to}):\n${input.message}` });
+          await fetch(`https://core-api.getaptly.com/api/board/workOrder/${input.card_id}/comment`, { method: 'POST', headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify({ content: `📱 SMS sent to ${input.recipient_type || 'tenant'} (${input.to}):\n${input.message}` }) });
         }
         return { success: true };
       }

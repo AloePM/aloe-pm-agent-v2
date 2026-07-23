@@ -78,6 +78,54 @@ async function rvFetch(path, params = {}) {
   return r.json();
 }
 
+async function rvPropertyLookup(q) {
+  try {
+    const qLower = (q || '').toLowerCase();
+    let allProps = [];
+    for (let page = 1; page <= 10; page++) {
+      const url = `${RENTVINE_BASE}/properties/export?pageSize=500&page=${page}`;
+      const r = await fetch(url, { headers: { Authorization: `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT } });
+      const batch = await r.json();
+      const items = Array.isArray(batch) ? batch : (batch.data || batch.results || []);
+      if (!items.length) break;
+      allProps = allProps.concat(items);
+      if (items.length < 500) break;
+    }
+    const stripDirections = s => s.replace(/\b(north|south|east|west|n|s|e|w)\b\.?/gi, '').replace(/\s+/g, ' ').trim();
+    const qClean = stripDirections(qLower);
+    const filtered = qLower ? allProps.filter(item => {
+      const p = item.property || item;
+      const addr = stripDirections((p.address || '').toLowerCase());
+      const street = stripDirections((p.streetName || '').toLowerCase());
+      const num = String(p.streetNumber || '').toLowerCase();
+      const queryParts = qClean.split(/\s+/);
+      const queryNum = queryParts.find(x => /^\d+$/.test(x)) || '';
+      const queryStreet = queryParts.filter(x => !/^\d+$/.test(x)).join(' ');
+      const numMatch = !queryNum || num === queryNum;
+      const streetMatch = !queryStreet || addr.includes(queryStreet) || street.includes(queryStreet);
+      return numMatch && streetMatch;
+    }) : allProps;
+    const enriched = await Promise.all(filtered.slice(0, 10).map(async item => {
+      const p = item.property || item;
+      let leaseId = p.leaseID || null;
+      if (!leaseId) {
+        try {
+          const units = await rvFetch('/properties/' + p.propertyID + '/units');
+          const unitList = Array.isArray(units) ? units : (units.units || units.data || []);
+          if (unitList.length > 0) {
+            const u = unitList[0].unit || unitList[0];
+            leaseId = u.leaseID || null;
+          }
+        } catch(e) { /* ignore */ }
+      }
+      return { propertyId: p.propertyID, leaseId, address: p.address, city: p.city, state: p.stateID, zip: p.postalCode };
+    }));
+    return { status: 200, body: { properties: enriched } };
+  } catch(e) {
+    return { status: 500, body: { error: e.message } };
+  }
+}
+
 const MARY_TOOLS = [
   {
     name: 'get_move_in_lease',
@@ -180,7 +228,7 @@ async function executeMaryTool(name, input) {
     case 'get_move_in_lease': {
       // Use Hub property lookup (fast) — strip city/state for best match
       const shortQ = (input.search || '').split(',')[0].replace(/(gilbert|chandler|mesa|phoenix|scottsdale|maricopa|tempe|az|arizona)/gi, '').trim().slice(0, 20);
-      const propRes = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(shortQ)}`);
+      const propRes = await rvPropertyLookup(shortQ);
       let propertyID = null;
       let address = null;
       if (propRes.status === 200 && propRes.body) {
@@ -310,7 +358,7 @@ async function executeMaryTool(name, input) {
       // If no propertyID, use Hub property lookup (fast) — use street number only for best results
       if (!propID && input.search) {
         const shortQuery = (input.search || '').split(',')[0].replace(/(gilbert|chandler|mesa|phoenix|scottsdale|maricopa|tempe|az|arizona)/gi, '').trim().slice(0, 20);
-        const propRes = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(shortQuery)}`);
+        const propRes = await rvPropertyLookup(shortQuery);
         if (propRes.status === 200 && propRes.body) {
           const props = propRes.body.properties || (Array.isArray(propRes.body) ? propRes.body : [propRes.body]);
           const p = props[0];
@@ -339,7 +387,7 @@ async function executeMaryTool(name, input) {
       let propID = input.propertyID;
       if (!propID && input.search) {
         const shortQ = (input.search || '').split(',')[0].replace(/(gilbert|chandler|mesa|phoenix|scottsdale|maricopa|tempe|az|arizona)/gi, '').trim().slice(0, 20);
-        const propRes = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(shortQ)}`);
+        const propRes = await rvPropertyLookup(shortQ);
         if (propRes.status === 200 && propRes.body) {
           const props = propRes.body.properties || [];
           propID = props[0]?.propertyId || props[0]?.propertyID;
@@ -378,7 +426,7 @@ async function executeMaryTool(name, input) {
       if (!leaseID && input.search) {
         // Use lease search
         const shortQ = (input.search || '').split(',')[0].replace(/(gilbert|chandler|mesa|phoenix|scottsdale|maricopa|tempe|az|arizona)/gi, '').trim().slice(0, 20);
-        const propRes = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(shortQ)}`);
+        const propRes = await rvPropertyLookup(shortQ);
         if (propRes.status === 200 && propRes.body?.properties?.length) {
           leaseID = propRes.body.properties[0]?.leaseId;
         }
@@ -409,7 +457,7 @@ async function executeMaryTool(name, input) {
       let propID = input.propertyID;
       if (!propID && input.search) {
         const shortQ = (input.search || '').split(',')[0].replace(/(gilbert|chandler|mesa|phoenix|scottsdale|maricopa|tempe|az|arizona)/gi, '').trim().slice(0, 20);
-        const propRes = await hubRequest('GET', `/api/rentvine/property-lookup?q=${encodeURIComponent(shortQ)}`);
+        const propRes = await rvPropertyLookup(shortQ);
         if (propRes.status === 200 && propRes.body?.properties?.length) {
           propID = propRes.body.properties[0]?.propertyId;
         }

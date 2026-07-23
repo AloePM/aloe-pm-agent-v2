@@ -3,7 +3,7 @@ const { loadPlaybook, savePlaybook } = require('./loadPlaybook');
 const { logActivity } = require('./logActivity');
 const { App } = require('@slack/bolt');
 const Anthropic = require('@anthropic-ai/sdk');
-const { APTLY_TOOLS, executeHubTool } = require('./hub-client');
+
 const { KAT_TOOLS, executeKatTool } = require('./kat-tools');
 const { getMcpServers } = require('./mcpConfig');
 const fs = require('fs');
@@ -196,7 +196,7 @@ async function runHOAProcess(base64Image, mimeType, event, client) {
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       system: HOA_SYSTEM_PROMPT,
-      tools: [...APTLY_TOOLS, ...KAT_TOOLS.filter(t => !APTLY_TOOLS.find(a => a.name === t.name))],
+      tools: KAT_TOOLS,
       messages,
     });
 
@@ -207,8 +207,7 @@ async function runHOAProcess(base64Image, mimeType, event, client) {
       for (const block of response.content) {
         if (block.type === 'tool_use') {
           console.log(`Kat HOA → ${block.name}:`, JSON.stringify(block.input).slice(0, 120));
-          const katToolNames = KAT_TOOLS.map(t => t.name);
-          const result = katToolNames.includes(block.name) ? await executeKatTool(block.name, block.input) : await executeHubTool(block.name, block.input);
+          const result = await executeKatTool(block.name, block.input);
           console.log(`Kat HOA ← ${block.name} result:`, JSON.stringify(result).slice(0, 200));
           toolResults.push({
             type: 'tool_result',
@@ -307,7 +306,7 @@ app.event('app_mention', async ({ event, client, say }) => {
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
         system: SYSTEM_PROMPT,
-        tools: [...APTLY_TOOLS, ...KAT_TOOLS.filter(t => !APTLY_TOOLS.find(a => a.name === t.name))],
+        tools: KAT_TOOLS,
         messages: mentionMessages,
       });
       mentionMessages.push({ role: 'assistant', content: response.content });
@@ -316,8 +315,7 @@ app.event('app_mention', async ({ event, client, say }) => {
         for (const block of response.content) {
           if (block.type === 'tool_use') {
             console.log('Kat mention tool:', block.name, JSON.stringify(block.input).slice(0, 100));
-            const katToolNames = KAT_TOOLS.map(t => t.name);
-          const result = katToolNames.includes(block.name) ? await executeKatTool(block.name, block.input) : await executeHubTool(block.name, block.input);
+            const result = await executeKatTool(block.name, block.input);
             toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) });
           }
         }
