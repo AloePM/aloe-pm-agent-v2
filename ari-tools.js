@@ -5,6 +5,65 @@ const RENTVINE_BASE = `https://${process.env.RENTVINE_ACCOUNT}.rentvine.com/api/
 const RENTVINE_AUTH = Buffer.from(`${process.env.RENTVINE_API_KEY}:${process.env.RENTVINE_API_SECRET}`).toString('base64');
 const APTLY_TOKEN = process.env.APTLY_TOKEN;
 
+// ── Legacy WO history (published Google Sheet, pre-2025 records) ─────────
+const WO_HISTORY_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRK9-xO96zty2FZ4UTsxKeDGTt45uCax-_m7zk0aQqJPQXAlwdy1gQN2Mn6F5tIZck2WN4h9_5bVaqm/pub?output=csv';
+let woHistoryCache = null;
+let woHistoryCacheTime = 0;
+const WO_HISTORY_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+async function getLegacyWOHistory() {
+  const now = Date.now();
+  if (woHistoryCache && (now - woHistoryCacheTime) < WO_HISTORY_CACHE_TTL) {
+    return woHistoryCache;
+  }
+  const r = await fetch(WO_HISTORY_SHEET_CSV);
+  const csv = await r.text();
+  const lines = csv.split('\n');
+  let headerIdx = lines.findIndex(l => l.includes('Work Order Number'));
+  if (headerIdx < 0) return [];
+  const headers = lines[headerIdx].split(',').map(h => h.replace(/"/g, '').trim());
+  const rows = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const fields = [];
+    let current = '';
+    let inQuotes = false;
+    for (let c = 0; c < line.length; c++) {
+      if (line[c] === '"') {
+        inQuotes = !inQuotes;
+      } else if (line[c] === ',' && !inQuotes) {
+        fields.push(current.trim());
+        current = '';
+      } else {
+        current += line[c];
+      }
+    }
+    fields.push(current.trim());
+    if (fields.length < 3) continue;
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = fields[idx] || ''; });
+    if (row['Work Order Number'] || row['Job Description']) {
+      rows.push(row);
+    }
+  }
+  woHistoryCache = rows;
+  woHistoryCacheTime = now;
+  return rows;
+}
+function searchLegacyWOHistory(address, trade) {
+  const addrLower = (address || '').toLowerCase();
+  const tradeLower = (trade || '').toLowerCase();
+  return (woHistoryCache || []).filter(row => {
+    const prop = (row['Property'] || '').toLowerCase();
+    const addrMatch = prop.includes(addrLower) || addrLower.split(' ').filter(w => w.length > 3).every(w => prop.includes(w));
+    if (!addrMatch) return false;
+    if (!tradeLower) return true;
+    const desc = (row['Job Description'] || '').toLowerCase();
+    const issue = (row['Work Order Issue'] || '').toLowerCase();
+    return desc.includes(tradeLower) || issue.includes(tradeLower);
+  });
+}
+
 async function rvFetch(path, params = {}) {
   const url = new URL(`${RENTVINE_BASE}${path}`);
   Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) url.searchParams.set(k, v); });
@@ -367,22 +426,41 @@ async function executeAriTool(toolName, input) {
         try {
           const lookup = await rvPropertyLookup(input.address);
           const props = lookup.body?.properties || [];
-          if (!props.length) return { error: 'Property not found for address: ' + input.address, history: [] };
-          const propertyId = props[0].propertyId;
           const limit = Math.min(parseInt(input.limit) || 10, 50);
-          const data = await rvFetch('/maintenance/work-orders', { propertyID: propertyId, pageSize: 100, page: 1 });
-          let rows = Array.isArray(data) ? data : (data.data || []);
-          rows = rows.map(r => r.workOrder || r);
-          if (input.trade) {
-            const tradeLower = input.trade.toLowerCase();
-            rows = rows.filter(r => (r.description || '').toLowerCase().includes(tradeLower));
+          let rentvineHistory = [];
+          if (props.length) {
+            const propertyId = props[0].propertyId;
+            const data = await rvFetch('/maintenance/work-orders', { propertyID: propertyId, pageSize: 100, page: 1 });
+            let rows = Array.isArray(data) ? data : (data.data || []);
+            rows = rows.map(r => r.workOrder || r);
+            if (input.trade) {
+              const tradeLower = input.trade.toLowerCase();
+              rows = rows.filter(r => (r.description || '').toLowerCase().includes(tradeLower));
+            }
+            rentvineHistory = rows.map(r => ({
+              source: 'rentvine', workOrderNumber: r.workOrderNumber, date: r.dateCreated || null,
+              description: (r.description || '').slice(0, 200), status: r.workOrderStatusID || null,
+              vendor: null, amount: null,
+            }));
           }
-          rows.sort((a,b) => new Date(b.dateCreated || 0) - new Date(a.dateCreated || 0));
-          const history = rows.slice(0, limit).map(r => ({
-            workOrderNumber: r.workOrderNumber, date: r.dateCreated || null,
-            description: (r.description || '').slice(0, 200), status: r.workOrderStatusID || null,
-          }));
-          return { propertyId, history, note: 'Reflects Rentvine work order history for this property.' };
+          let legacyHistory = [];
+          try {
+            await getLegacyWOHistory();
+            legacyHistory = searchLegacyWOHistory(input.address, input.trade).map(row => ({
+              source: 'legacy', workOrderNumber: row['Work Order Number'] || null, date: row['Created At'] || null,
+              description: (row['Job Description'] || '').slice(0, 200), status: row['Status'] || null,
+              vendor: row['Vendor'] || null, amount: row['Amount'] || null,
+              homeWarrantyExpiry: row['Home Warranty Expiration'] || null,
+              completedOn: row['Completed On'] || null,
+            }));
+          } catch(e) { console.error('Legacy WO history fetch error:', e.message); }
+          if (!props.length && !legacyHistory.length) {
+            return { error: 'Property not found for address: ' + input.address, history: [] };
+          }
+          const merged = [...rentvineHistory, ...legacyHistory];
+          merged.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+          const history = merged.slice(0, limit);
+          return { propertyId: props[0]?.propertyId || null, history, note: 'Merges live Rentvine work orders with legacy pre-2025 records from Google Sheets history.' };
         } catch(e) { return { error: e.message, history: [] }; }
       }
       case 'rv_get_notes': {
