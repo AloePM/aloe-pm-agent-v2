@@ -4,6 +4,7 @@ const { logActivity } = require('./logActivity');
 const { App } = require('@slack/bolt');
 const Anthropic = require('@anthropic-ai/sdk');
 const { APTLY_TOOLS, executeHubTool } = require('./hub-client');
+const { KAT_TOOLS, executeKatTool } = require('./kat-tools');
 const { getMcpServers } = require('./mcpConfig');
 const fs = require('fs');
 const path = require('path');
@@ -195,7 +196,7 @@ async function runHOAProcess(base64Image, mimeType, event, client) {
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       system: HOA_SYSTEM_PROMPT,
-      tools: APTLY_TOOLS,
+      tools: [...APTLY_TOOLS, ...KAT_TOOLS.filter(t => !APTLY_TOOLS.find(a => a.name === t.name))],
       messages,
     });
 
@@ -206,7 +207,8 @@ async function runHOAProcess(base64Image, mimeType, event, client) {
       for (const block of response.content) {
         if (block.type === 'tool_use') {
           console.log(`Kat HOA → ${block.name}:`, JSON.stringify(block.input).slice(0, 120));
-          const result = await executeHubTool(block.name, block.input);
+          const katToolNames = KAT_TOOLS.map(t => t.name);
+          const result = katToolNames.includes(block.name) ? await executeKatTool(block.name, block.input) : await executeHubTool(block.name, block.input);
           console.log(`Kat HOA ← ${block.name} result:`, JSON.stringify(result).slice(0, 200));
           toolResults.push({
             type: 'tool_result',
@@ -305,7 +307,7 @@ app.event('app_mention', async ({ event, client, say }) => {
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
         system: SYSTEM_PROMPT,
-        tools: APTLY_TOOLS,
+        tools: [...APTLY_TOOLS, ...KAT_TOOLS.filter(t => !APTLY_TOOLS.find(a => a.name === t.name))],
         messages: mentionMessages,
       });
       mentionMessages.push({ role: 'assistant', content: response.content });
@@ -314,7 +316,8 @@ app.event('app_mention', async ({ event, client, say }) => {
         for (const block of response.content) {
           if (block.type === 'tool_use') {
             console.log('Kat mention tool:', block.name, JSON.stringify(block.input).slice(0, 100));
-            const result = await executeHubTool(block.name, block.input);
+            const katToolNames = KAT_TOOLS.map(t => t.name);
+          const result = katToolNames.includes(block.name) ? await executeKatTool(block.name, block.input) : await executeHubTool(block.name, block.input);
             toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) });
           }
         }
@@ -335,7 +338,52 @@ app.event('app_mention', async ({ event, client, say }) => {
     });
   }
 });
+// ── Handle field update approvals from Hub ─────────────────────────────────
+app.action('field_update_approve_kat', async ({ ack, body, action }) => {
+  await ack();
+  if (body.channel?.id !== 'C0BCJFW2L5A') return; // only handle in #hoa-kat
+  const pendingId = action.value;
+  const HUB_URL = process.env.HUB_URL || 'https://hub.aloepm.com';
+  const HUB_TOKEN = process.env.HUB_INTERNAL_SECRET || '';
+  try {
+    const res = await fetch(`${HUB_URL}/api/agent/field-update-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-hub-token': HUB_TOKEN },
+      body: JSON.stringify({ pendingId, action: 'approve', responseUrl: body.response_url }),
+    });
+    const data = await res.json();
+    await app.client.chat.update({
+      channel: body.channel.id,
+      ts: body.message.ts,
+      text: data.ok ? `✅ Written to Rentvine: ${data.address}` : `❌ Error: ${data.error}`,
+      blocks: [],
+    });
+  } catch(e) { console.error('field_update_approve error:', e.message); }
+});
+app.action('field_update_skip_kat', async ({ ack, body, action }) => {
+  await ack();
+  if (body.channel?.id !== 'C0BCJFW2L5A') return; // only handle in #hoa-kat
+  const pendingId = action.value;
+  const HUB_URL = process.env.HUB_URL || 'https://hub.aloepm.com';
+  const HUB_TOKEN = process.env.HUB_INTERNAL_SECRET || '';
+  try {
+    await fetch(`${HUB_URL}/api/agent/field-update-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-hub-token': HUB_TOKEN },
+      body: JSON.stringify({ pendingId, action: 'skip' }),
+    });
+    await app.client.chat.update({
+      channel: body.channel.id,
+      ts: body.message.ts,
+      text: `⏭ Skipped`,
+      blocks: [],
+    });
+  } catch(e) { console.error('field_update_skip error:', e.message); }
+});
 
+
+
+// ── Handle field update approvals from Hub ──────────────────────────────────
 (async () => {
   SYSTEM_PROMPT = await loadPlaybook('kat', SYSTEM_PROMPT);
   await app.start();

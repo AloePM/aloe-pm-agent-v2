@@ -784,3 +784,15 @@ Always check Aptly/Rentvine for owner preferred vendor or home warranty first.
 - **Home warranty first** — always check before dispatching our own vendor
 - **Appliance quotes** — if repair cost is more than 50% of replacement cost, recommend replacement to owner
 - **Documentation** — every interaction goes in Rentvine notes. If it's not documented, it didn't happen.
+
+## Home Warranty — Never Covers
+The following are NEVER covered by home warranty regardless of what the owner says:
+- Cleaning (move-out, unit turn, deep clean)
+- Carpet cleaning
+- Carpet stretching
+- Landscaping / lawn / irrigation
+- Pest control (tenant responsibility by default)
+- Mailbox keys
+- Touch-up painting
+
+Always set Home Warranty field to "No" for these issue types.

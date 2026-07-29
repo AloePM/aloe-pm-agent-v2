@@ -4,14 +4,16 @@
 const https = require('https');
 
 const HUB_HOST = 'hub.aloepm.com';
+const HUB_PORT = 443;
 const HUB_SECRET = process.env.HUB_INTERNAL_SECRET;
 if (!HUB_SECRET) throw new Error('HUB_INTERNAL_SECRET is not set in environment');
 
 function hubRequest(method, path, body = null) {
   return new Promise((resolve, reject) => {
     const bodyStr = body ? JSON.stringify(body) : null;
-    const req = https.request({
+    const req = require('https').request({
       hostname: HUB_HOST,
+      port: HUB_PORT,
       path,
       method,
       headers: {
@@ -76,7 +78,6 @@ const APTLY_TOOLS = [
     }
   },
   { name: 'aptly_create_hoa_card', description: 'Create a new HOA Violation card in Aptly on the HOA Violations board. Never leave owner_tenant_responsible or violation_issue blank.', input_schema: { type: 'object', properties: { title: { type: 'string', description: 'Address – HOA Warning/Violation: [issue]' }, unit_aptly_id: { type: 'string', description: 'Aptly unit aptlet ID from aptly_get_aptlet_ids' }, unit_aptly_name: { type: 'string' }, building_aptly_id: { type: 'string', description: 'Aptly building aptlet ID from aptly_get_aptlet_ids' }, building_aptly_name: { type: 'string' }, due_date: { type: 'string' }, violation_issue: { type: 'string' }, warning_or_fine: { type: 'string', enum: ['Warning', 'Fine'] }, fine_amount: { type: 'number' }, owner_tenant_responsible: { type: 'string', enum: ['Owner', 'Tenant'] }, violation_exact_wording: { type: 'string' }, mirror_hoa_name: { type: 'string' }, mirror_hoa_number: { type: 'string' }, mirror_hoa_email: { type: 'string' } }, required: ['title', 'violation_issue', 'warning_or_fine', 'owner_tenant_responsible'] } },
-  { name: 'aptly_get_aptlet_ids', description: 'Look up Aptly unit and building aptlet IDs for a property using just the house number. Call this before aptly_create_hoa_card to enable unit/building auto-linking on the card.', input_schema: { type: 'object', properties: { house_number: { type: 'string', description: 'Just the house number, e.g. "4805" from "4805 N 87th Ave"' } }, required: ['house_number'] } },
 ];
 
 async function executeHubTool(toolName, input) {
@@ -135,7 +136,19 @@ async function executeHubTool(toolName, input) {
           leaseStart: card['Mirror Move-In Date'] || card['Lease Term Start'] || null,
           leaseEnd: card['Mirror End Date'] || card['Lease Expire Date'] || null,
         }));
-        return { items: enriched, total: enriched.length };
+        // Fallback: if first result has no unit/building IDs, try Kat building lookup
+        const finalItems = await Promise.all(enriched.map(async card => {
+          if (!card.unit_aptly_id && input.address) {
+            try {
+              const fallback = await hubRequest('GET', `/api/kat/building-lookup?q=${encodeURIComponent(input.address)}`);
+              if (fallback.status === 200 && fallback.body.unit_aptly_id) {
+                return { ...card, ...fallback.body };
+              }
+            } catch(e) {}
+          }
+          return card;
+        }));
+        return { items: finalItems, total: finalItems.length };
       }
       case 'rv_search_property': {
         const normalized = (input.address || '')
@@ -163,23 +176,22 @@ async function executeHubTool(toolName, input) {
         return res.status === 200 ? res.body : { error: `Hub ${res.status}`, detail: res.body };
       }
       case 'rv_add_lease_charge': {
-        const res = await hubRequest('POST', `/api/rentvine/leases/${input.lease_id}/charges`, {
+        const leaseId = input.lease_id || input.leaseID;
+        const res = await hubRequest('POST', `/api/rentvine/leases/${leaseId}/charges`, {
           amount: input.amount, description: input.description
         });
         return res.status === 200 || res.status === 201 ? { success: true } : { error: `Hub ${res.status}`, detail: res.body };
       }
       case 'rv_get_lease_balance': {
-        const res = await hubRequest('GET', `/api/rentvine/leases/${input.lease_id}/balance-due`);
+        const leaseIdBal = input.lease_id || input.leaseID;
+        const res = await hubRequest('GET', `/api/rentvine/leases/${leaseIdBal}/balance-due`);
         return res.status === 200 ? res.body : { error: `Hub ${res.status}`, detail: res.body };
       }
       case 'aptly_create_hoa_card': {
         const res = await hubRequest('POST', `/api/aptly/hoa-cards`, input);
         return res.status === 200 || res.status === 201 ? { success: true, card: res.body } : { error: `Hub ${res.status}`, detail: res.body };
       }
-      case 'aptly_get_aptlet_ids': {
-        const res = await hubRequest('GET', `/api/aptly/aptlet-lookup?q=${encodeURIComponent(input.house_number)}`);
-        return res.status === 200 ? res.body : { unit_aptly_id: null, building_aptly_id: null };
-      }
+
       default: return { error: `Unknown tool: ${toolName}` };
     }
   } catch(e) { return { error: e.message }; }

@@ -52,10 +52,6 @@ When searching by address:
 - If still nothing found, suggest the address may be under a slightly different spelling in Rentvine
 When staff gives a WO number like 106573, use that to search Aptly (it appears in the card title) and also use rv_get_notes with that number to get Rentvine notes.
 
-VALID ISSUE TYPE OPTIONS (Aptly dropdown — this is a closed list, you must pick one EXACTLY as written below, never invent, shorten, or paraphrase a label):
-Ice Maker, Refrigerator/Freezer, Shower/Tub Issues, Water Heater, Garage Door, HVAC Heat not working, HVAC AC not working, Bees, Ceiling Fan, Irrigation or Sprinkler, Landscaping, Toilet Issues (not leak), Washing Machine, Clogged Drains, Electrical, Garbage Disposal, Leaks: Sink, Leaks: Toilet, Pest Control, Microwave, Dryer, Dishwasher, Stove/Oven
-If nothing on this list is a clean fit, pick the single closest match from the list above rather than writing a new label — a close exact match is always better than an accurate-but-invalid new one.
-
 When triaging any work order — via webhook or staff @mention:
 1. Always identify the correct Aptly Issue Type based on the description
 2. State it explicitly: "Aptly Issue Type: Water Heater"
@@ -92,7 +88,7 @@ let SYSTEM_PROMPT = buildSystemPrompt();
 console.log('Ari loaded — playbook:', SYSTEM_PROMPT.length, 'chars');
 
 // ── Hub proxy ──────────────────────────────────────────────────────────────
-const HUB_SECRET = process.env.HUB_INTERNAL_SECRET;
+const HUB_SECRET = 'aloe-hub-ari-2026';
 const HUB_HOST = 'hub.aloepm.com';
 
 function hubRequest(method, apiPath, body = null) {
@@ -338,120 +334,9 @@ async function runAgentLoop(messages) {
 slackApp.event('app_mention', async ({ event, client, say }) => {
   console.log('Ari mentioned:', event.text?.slice(0, 80));
   const userMessage = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
+  if (!userMessage) return;
   const thinking = await say({ text: '⚙️ On it...', thread_ts: event.thread_ts || event.ts });
   try {
-    // ── Invoice / file upload handling ──────────────────────────────────────
-    if (event.files && event.files.length > 0) {
-      const file = event.files[0];
-      const fileUrl = file.url_private_download || file.url_private;
-      if (fileUrl) {
-        const fileRes = await fetch(fileUrl, {
-          headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}` }
-        });
-        const fileBuffer = Buffer.from(await fileRes.arrayBuffer());
-        const base64Data = fileBuffer.toString('base64');
-        const mimeType = file.mimetype || 'application/pdf';
-
-        // Ask Claude to extract invoice data
-        const extractRes = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1024,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'document', source: { type: 'base64', media_type: mimeType, data: base64Data } },
-              { type: 'text', text: `This is a property management invoice or receipt. Extract the following and respond with JSON only:
-{
-  "propertyAddress": "the ship-to/delivery address (not the bill-to/company address)",
-  "appliances": [
-    {
-      "type": "dishwasher|refrigerator|stove|washer|dryer|microwave|water_heater|ac_unit",
-      "brand": "brand name",
-      "model": "model number",
-      "color": "color if mentioned",
-      "cost": "item price as number string e.g. 519.95",
-      "datePurchased": "YYYY-MM-DD format"
-    }
-  ],
-  "invoiceNumber": "invoice/reference number",
-  "vendor": "store or vendor name"
-}
-Only include appliances, not installation fees or accessories. If a field is not found, use null.` }
-            ]
-          }]
-        });
-
-        let invoiceData;
-        try {
-          const rawText = extractRes.content.find(c => c.type === 'text')?.text || '{}';
-          invoiceData = JSON.parse(rawText.replace(/```json|```/g, '').trim());
-        } catch(e) {
-          await client.chat.update({ channel: event.channel, ts: thinking.ts, text: '⚠️ Could not read the invoice. Please make sure it is a clear PDF or image.' });
-          return;
-        }
-
-        if (!invoiceData.propertyAddress || !invoiceData.appliances?.length) {
-          await client.chat.update({ channel: event.channel, ts: thinking.ts, text: `⚠️ I could not find a property address or appliance data in this invoice. Please check the document and try again.` });
-          return;
-        }
-
-        // Build fields array
-        const FIELD_NAME_MAP = {
-          dishwasher: { brand: 'Dishwasher brand', model: 'Dishwasher model number', color: 'Dishwasher color', cost: 'Dishwasher purchase cost', datePurchased: 'Dishwasher date purchased' },
-          refrigerator: { brand: 'Refrigerator brand', model: 'Refrigerator model number', color: 'Refrigerator color', cost: 'Refrigerator purchase cost', datePurchased: 'Refrigerator date purchased' },
-          stove: { brand: 'Range/stove brand', model: 'Range/stove model number', color: 'Range/stove color', cost: 'Range/stove purchase cost', datePurchased: 'Range/stove date purchased' },
-          washer: { brand: 'Washing machine brand', model: 'Washing machine model number', cost: 'Washing machine purchase cost', datePurchased: 'Washing machine date of purchase' },
-          dryer: { brand: 'Dryer brand', model: 'Dryer model number', cost: 'Dryer purchase cost', datePurchased: 'Dryer date of purchase' },
-          microwave: { brand: 'Microwave brand', model: 'Microwave model number', color: 'Microwave color', cost: 'Microwave purchase cost', datePurchased: 'Microwave date purchased' },
-          water_heater: { brand: 'Water heater brand', model: 'Water heater model number', cost: 'Water heater purchase cost', datePurchased: 'Water heater date purchased' },
-          ac_unit: { brand: 'AC unit 1 brand', model: 'AC unit 1 model number', cost: 'AC unit 1 purchase cost', datePurchased: 'AC unit 1 date purchased' },
-        };
-
-        const fields = [];
-        for (const appliance of invoiceData.appliances) {
-          const map = FIELD_NAME_MAP[appliance.type] || {};
-          if (appliance.brand && map.brand) fields.push({ name: map.brand, value: appliance.brand });
-          if (appliance.model && map.model) fields.push({ name: map.model, value: appliance.model });
-          if (appliance.color && map.color) fields.push({ name: map.color, value: appliance.color });
-          if (appliance.cost && map.cost) fields.push({ name: map.cost, value: appliance.cost });
-          if (appliance.datePurchased && map.datePurchased) fields.push({ name: map.datePurchased, value: appliance.datePurchased });
-        }
-
-        if (!fields.length) {
-          await client.chat.update({ channel: event.channel, ts: thinking.ts, text: '⚠️ Found the invoice but could not extract any appliance fields.' });
-          return;
-        }
-
-        // Call Hub to queue for approval
-        const HUB_URL = process.env.HUB_URL || 'https://hub.aloepm.com';
-        const HUB_TOKEN = process.env.HUB_INTERNAL_SECRET || '';
-        const hubRes = await fetch(`${HUB_URL}/api/agent/update-property-fields`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-hub-token': HUB_TOKEN },
-          body: JSON.stringify({
-            address: invoiceData.propertyAddress,
-            agent: 'ari',
-            fields,
-            source: `Invoice ${invoiceData.invoiceNumber || ''} from ${invoiceData.vendor || 'vendor'}`,
-          }),
-        });
-        const hubData = await hubRes.json();
-
-        if (hubData.ok) {
-          await client.chat.update({ channel: event.channel, ts: thinking.ts,
-            text: `📋 Invoice read — *${invoiceData.propertyAddress}*
-${fields.map(f => `• ${f.name}: ${f.value}`).join('\n')}\n\nApproval sent to #maintenance-ari 👆`
-          });
-        } else {
-          await client.chat.update({ channel: event.channel, ts: thinking.ts,
-            text: `⚠️ Read invoice but could not queue for Rentvine: ${hubData.error || 'unknown error'}`
-          });
-        }
-        return;
-      }
-    }
-    // ── Normal message handling ──────────────────────────────────────────────
-    if (!userMessage) return;
     const threadTs = event.thread_ts || event.ts;
     const history = await getThreadHistory(client, event.channel, threadTs);
     const botInfo = await client.auth.test();
@@ -518,7 +403,7 @@ WO #${woNumber} — ${address}
 Description: ${rawDesc}
 Event: work_order.created
 
-Triage this work order: classify urgency (Emergency/Urgent/Routine), identify the Aptly issue type, look up the property's actual city (do not assume Chandler or any default city — confirm it from Rentvine or the property record), suggest the right vendor for that specific city/zone, and flag any escalation triggers. Be concise — this is a Slack notification for the team.`;
+Triage this work order: classify urgency (Emergency/Urgent/Routine), identify the Aptly issue type, recommend troubleshoot-first or instant dispatch, suggest the right vendor for Chandler/East Valley, and flag any escalation triggers. Be concise — this is a Slack notification for the team.`;
 
     // Get Ari's triage
     let reply;
@@ -529,8 +414,7 @@ Triage this work order: classify urgency (Emergency/Urgent/Routine), identify th
       // Extract issue type from reply
       const issueMatch = reply.match(/ISSUE_TYPE:\s*(.+)/);
       if (issueMatch) {
-        // Strip markdown formatting (bold/italic asterisks, backticks) so the exact dropdown string reaches Aptly cleanly
-        issueType = issueMatch[1].trim().replace(/[\*_`]+/g, '').trim();
+        issueType = issueMatch[1].trim();
         reply = reply.replace(/ISSUE_TYPE:\s*.+\n?/, '').trim();
       }
     } catch(loopErr) {
@@ -679,56 +563,11 @@ function scheduleFollowUp() {
     setInterval(runDailyFollowUp, 24 * 60 * 60 * 1000);
   }, ms);
 }
-// ── Handle field update approvals from Hub ─────────────────────────────────
-slackApp.action('field_update_approve_ari', async ({ ack, body, action }) => {
-  await ack();
-  const pendingId = action.value;
-  const HUB_URL = process.env.HUB_URL || 'https://hub.aloepm.com';
-  const HUB_TOKEN = process.env.HUB_INTERNAL_SECRET || '';
-  try {
-    const res = await fetch(`${HUB_URL}/api/agent/field-update-action`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-hub-token': HUB_TOKEN },
-      body: JSON.stringify({ pendingId, action: 'approve', responseUrl: body.response_url }),
-    });
-    const data = await res.json();
-    await slackApp.client.chat.update({
-      channel: body.channel.id,
-      ts: body.message.ts,
-      text: data.ok ? `✅ Written to Rentvine: ${data.address}` : `❌ Error: ${data.error}`,
-      blocks: [],
-    });
-  } catch(e) {
-    console.error('field_update_approve error:', e.message);
-  }
-});
-slackApp.action('field_update_skip_ari', async ({ ack, body, action }) => {
-  await ack();
-  const pendingId = action.value;
-  const HUB_URL = process.env.HUB_URL || 'https://hub.aloepm.com';
-  const HUB_TOKEN = process.env.HUB_INTERNAL_SECRET || '';
-  try {
-    await fetch(`${HUB_URL}/api/agent/field-update-action`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-hub-token': HUB_TOKEN },
-      body: JSON.stringify({ pendingId, action: 'skip', responseUrl: body.response_url }),
-    });
-    await slackApp.client.chat.update({
-      channel: body.channel.id,
-      ts: body.message.ts,
-      text: `⏭ Skipped`,
-      blocks: [],
-    });
-  } catch(e) {
-    console.error('field_update_skip error:', e.message);
-  }
-});
-
 
 // ── Start both servers ─────────────────────────────────────────────────────
 (async () => {
   SYSTEM_PROMPT = await loadPlaybook('ari', SYSTEM_PROMPT);
-  try { await savePlaybook('ari', SYSTEM_PROMPT); } catch(e) { console.log('savePlaybook skipped:', e.message); }
+  await savePlaybook('ari', SYSTEM_PROMPT);
   await slackApp.start();
   console.log('⚡ Ari is online and listening for @Ari mentions');
   scheduleFollowUp();
@@ -736,6 +575,6 @@ slackApp.action('field_update_skip_ari', async ({ ack, body, action }) => {
   const WEBHOOK_PORT = process.env.WEBHOOK_PORT || 3001;
   webhookApp.listen(WEBHOOK_PORT, () => {
     console.log(`🪝 Webhook server listening on port ${WEBHOOK_PORT}`);
-    console.log(`   Rentvine webhook URL: http://34.16.157.83:${WEBHOOK_PORT}/webhook/rentvine`);
+    console.log(`   Rentvine webhook URL: http://34.16.238.69:${WEBHOOK_PORT}/webhook/rentvine`);
   });
 })();

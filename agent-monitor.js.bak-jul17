@@ -1,0 +1,78 @@
+const { execSync } = require('child_process');
+const express = require('express');
+const app = express();
+
+const HUB_URL = 'https://hub.aloepm.com/api/agents/heartbeat';
+
+function getStatus() {
+  const raw = execSync('pm2 jlist').toString();
+  return JSON.parse(raw).map(p => ({
+    name: p.name,
+    status: p.pm2_env.status,
+    uptime: p.pm2_env.pm_uptime,
+    restarts: p.pm2_env.restart_time,
+    memory: p.monit.memory,
+  }));
+}
+
+app.get('/status', (req, res) => {
+  try {
+    res.json(getStatus());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+async function pushStatus() {
+  try {
+    const procs = getStatus();
+    await fetch(HUB_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-agent-key': 'aloe-internal' },
+      body: JSON.stringify({ procs, pushedAt: new Date().toISOString() }),
+    });
+    console.log('Status pushed to hub:', new Date().toISOString());
+  } catch (err) {
+    console.error('Push failed:', err.message);
+  }
+}
+
+pushStatus();
+setInterval(pushStatus, 30000);
+
+app.listen(4040, () => console.log('Agent monitor running on port 4040'));
+
+// ── Reload playbook + restart agent ──────────────────────────────────────
+app.post('/reload/:agent', (req, res) => {
+  const secret = req.headers['x-agent-key'];
+  if (secret !== (process.env.HUB_INTERNAL_SECRET || 'aloe-hub-ari-2026')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const agent = req.params.agent;
+  const validAgents = ['ari','kat','rex','remy','bo','ivy','jay','joe','lea','mae'];
+  if (!validAgents.includes(agent)) return res.status(400).json({ error: 'Unknown agent' });
+  try {
+    execSync('cd /home/randi/aloe-pm-agent-v2 && git pull', { timeout: 30000 });
+    execSync(`pm2 restart ${agent} --update-env`, { timeout: 15000 });
+    res.json({ success: true, agent, message: `${agent} reloaded` });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Hub Deploy ────────────────────────────────────────────────────────────
+app.post('/deploy/hub', (req, res) => {
+  const secret = req.headers['x-agent-key'];
+  if (secret !== (process.env.HUB_INTERNAL_SECRET || 'aloe-hub-ari-2026')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  res.json({ success: true, message: 'Deploy started, takes ~3 min' });
+  // Run async after response
+  const { exec } = require('child_process');
+  exec(
+    'cd /home/randi/Aloe-Internal-Hub && git pull && gcloud builds submit --tag us-west4-docker.pkg.dev/property-agent-496300/cloud-run-source-deploy/aloe-internal-hub-git:latest . && gcloud run deploy aloe-internal-hub-git --image us-west4-docker.pkg.dev/property-agent-496300/cloud-run-source-deploy/aloe-internal-hub-git:latest --region us-west4 --project property-agent-496300',
+    { timeout: 300000 },
+    (err, stdout, stderr) => {
+      if (err) console.error('Hub deploy error:', err.message);
+      else console.log('Hub deploy success:', stdout.slice(-200));
+    }
+  );
+});
