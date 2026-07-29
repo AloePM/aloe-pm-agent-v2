@@ -351,6 +351,11 @@ slackApp.event('app_mention', async ({ event, client, say }) => {
         const fileBuffer = Buffer.from(await fileRes.arrayBuffer());
         const base64Data = fileBuffer.toString('base64');
         const mimeType = file.mimetype || 'application/pdf';
+        const allowedTypes = ['application/pdf','image/jpeg','image/png','image/webp','image/gif'];
+        if (!allowedTypes.includes(mimeType)) {
+          await client.chat.update({ channel: event.channel, ts: thinking.ts, text: '⚠️ I can only read PDF and image files. Please convert this file to PDF and try again.' });
+          return;
+        }
 
         // Ask Claude to extract invoice data
         const extractRes = await anthropic.messages.create({

@@ -273,14 +273,72 @@ app.event('message', async ({ event, client }) => {
 app.event('app_mention', async ({ event, client, say }) => {
   console.log('Kat mentioned:', event.text?.slice(0, 80));
   const userMessage = (event.text || '').replace(/<@[A-Z0-9]+>/g, '').trim();
-  if (!userMessage) return;
-
   const thinking = await say({
     text: '⚙️ On it...',
     thread_ts: event.thread_ts || event.ts,
   });
-
   try {
+    // ── HOA document / file upload handling ─────────────────────────────────
+    if (event.files && event.files.length > 0) {
+      const file = event.files[0];
+      const fileUrl = file.url_private_download || file.url_private;
+      if (fileUrl) {
+        const fileRes = await fetch(fileUrl, { headers: { Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}` } });
+        const fileBuffer = Buffer.from(await fileRes.arrayBuffer());
+        const base64Data = fileBuffer.toString('base64');
+        const mimeType = file.mimetype || 'application/pdf';
+        const allowedTypes = ['application/pdf','image/jpeg','image/png','image/webp','image/gif'];
+        if (!allowedTypes.includes(mimeType)) {
+          await client.chat.update({ channel: event.channel, ts: thinking.ts, text: '⚠️ I can only read PDF and image files. Please convert this file to PDF and try again.' });
+          return;
+        }
+        const extractRes = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6', max_tokens: 1024,
+          messages: [{ role: 'user', content: [
+            { type: 'document', source: { type: 'base64', media_type: mimeType, data: base64Data } },
+            { type: 'text', text: `This is an HOA document for a rental property. Extract and respond with JSON only:
+{"propertyAddress":"property address this notice is for","hoaName":"HOA or community name","hoaPhone":"HOA phone number","hoaEmail":"HOA email","hoaWebsite":"HOA website URL","violationDescription":"brief violation description"}
+Use null for missing fields.` }
+          ]}]
+        });
+        let hoaData;
+        try {
+          const rawText = extractRes.content.find(c => c.type === 'text')?.text || '{}';
+          hoaData = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+        } catch(e) {
+          await client.chat.update({ channel: event.channel, ts: thinking.ts, text: '⚠️ Could not read the HOA document.' });
+          return;
+        }
+        if (!hoaData.propertyAddress) {
+          await client.chat.update({ channel: event.channel, ts: thinking.ts, text: '⚠️ Could not find a property address in this document.' });
+          return;
+        }
+        const fields = [];
+        if (hoaData.hoaPhone)   fields.push({ name: 'Hoa Number',  value: hoaData.hoaPhone });
+        if (hoaData.hoaEmail)   fields.push({ name: 'HOA Email',   value: hoaData.hoaEmail });
+        if (hoaData.hoaWebsite) fields.push({ name: 'HOA Website', value: hoaData.hoaWebsite });
+        if (!fields.length) {
+          await client.chat.update({ channel: event.channel, ts: thinking.ts, text: `📋 HOA doc read for *${hoaData.propertyAddress}* — no contact fields found.` });
+          return;
+        }
+        const HUB_URL = process.env.HUB_URL || 'https://hub.aloepm.com';
+        const HUB_TOKEN = process.env.HUB_INTERNAL_SECRET || '';
+        const hubRes = await fetch(`${HUB_URL}/api/agent/update-property-fields`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-hub-token': HUB_TOKEN },
+          body: JSON.stringify({ address: hoaData.propertyAddress, agent: 'kat', fields, source: `HOA doc — ${hoaData.hoaName || 'unknown HOA'}` }),
+        });
+        const hubData = await hubRes.json();
+        await client.chat.update({ channel: event.channel, ts: thinking.ts,
+          text: hubData.ok
+            ? `📋 HOA doc read — *${hoaData.propertyAddress}*\n${fields.map(f => `• ${f.name}: ${f.value}`).join('\n')}\n\nApproval sent to #maintenance-ari 👆`
+            : `⚠️ Read HOA doc but could not queue: ${hubData.error || 'unknown error'}`
+        });
+        return;
+      }
+    }
+    // ── Normal message handling ──────────────────────────────────────────────
+    if (!userMessage) return;
     const threadTs = event.thread_ts || event.ts;
     const history = await getThreadHistory(client, event.channel, threadTs);
     const botInfo = await client.auth.test();
