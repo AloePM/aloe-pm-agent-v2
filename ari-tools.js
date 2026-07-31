@@ -229,7 +229,16 @@ async function executeAriTool(toolName, input) {
           'priority': 'priority',
           'vendor': 'vendor',
         };
-        const fieldKey = fieldMap[input.field_name.toLowerCase()] || input.field_name;
+        const fieldKey = fieldMap[input.field_name.toLowerCase().trim()];
+        if (!fieldKey) return { error: `Unknown field_name: "${input.field_name}". Must be one of: ${Object.keys(fieldMap).join(', ')}` };
+        const VALID_ISSUE_TYPES = ['Ice Maker','Refrigerator/Freezer','Shower/Tub Issues','Water Heater','Garage Door','HVAC Heat not working','HVAC AC not working','Bees','Ceiling Fan','Irrigation or Sprinkler','Landscaping','Toilet Issues (not leak)','Washing Machine','Clogged Drains','Electrical','Garbage Disposal','Leaks: Sink','Leaks: Toilet','Pest Control','Microwave','Dryer','Dishwasher','Stove/Oven'];
+        const VALID_HOME_WARRANTY = ['Yes','No'];
+        if (fieldKey === 'nfEujqs3ujMNgMFom' && !VALID_ISSUE_TYPES.includes(input.value)) {
+          return { success: false, skipped: true, reason: `"${input.value}" is not a valid Issue Type option — left blank. No troubleshooting-steps automation will fire for this card; needs manual dispatch.` };
+        }
+        if (fieldKey === '3PvcEJoFBQLnjHnd6' && !VALID_HOME_WARRANTY.includes(input.value)) {
+          return { success: false, skipped: true, reason: `"${input.value}" is not a valid Home Warranty value (must be exactly "Yes" or "No") — left blank.` };
+        }
         // Call Aptly directly with correct body format
         const body = { _id: input.card_id };
         body[fieldKey] = input.value;
