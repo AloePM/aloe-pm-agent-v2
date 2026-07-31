@@ -11,7 +11,7 @@ const http = require('http');
 const crypto = require('crypto');
 const express = require('express');
 
-const { ARI_TOOLS, executeAriTool } = require('./ari-tools');
+const { ARI_TOOLS, executeAriTool, findVendorByPhone } = require('./ari-tools');
 const repoPath = process.env.ALOE_REPO_PATH || path.join(process.env.HOME, 'aloe-pm-agent-v2');
 
 function loadFile(filePath) {
@@ -582,6 +582,94 @@ Triage this work order: classify urgency (Emergency/Urgent/Routine), identify th
   } catch(e) {
     console.error('Webhook error:', e.message);
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Passive #quo Slack channel listener — vendor document auto-detection ──
+const QUO_SLACK_CHANNEL = 'C06S10SKP98';
+const QUO_BOT_ID = 'B06SEN57763';
+
+slackApp.event('message', async ({ event, client }) => {
+  try {
+    if (event.channel !== QUO_SLACK_CHANNEL) return;
+    if (event.bot_id !== QUO_BOT_ID) return;
+    if (event.subtype) return;
+
+    const text = event.text || '';
+    const mediaMatch = text.match(/https:\/\/share\.quo\.com\/v1\/resource\/message-media\/[^\s|>]+/);
+    if (!mediaMatch) return;
+
+    const phoneMatch = text.match(/\((\d{3})\)\s?(\d{3})-(\d{4})/);
+    if (!phoneMatch) return;
+    const rawPhone = '+1' + phoneMatch[1] + phoneMatch[2] + phoneMatch[3];
+
+    const vendor = await findVendorByPhone(rawPhone);
+    if (!vendor) return;
+
+    const mediaUrl = mediaMatch[0];
+    const imgRes = await fetch(mediaUrl);
+    if (!imgRes.ok) { console.error('Quo media fetch failed:', imgRes.status); return; }
+    const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+    const base64Data = imgBuffer.toString('base64');
+    const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+
+    const extractRes = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: contentType, data: base64Data } },
+          { type: 'text', text: `This is a photo of a vendor service ticket, invoice, or estimate sent by a maintenance vendor via text message. Extract the following and respond with JSON only:
+{
+  "workOrderNumber": "the WO/HW number referenced, if any (digits only)",
+  "technician": "tech name if shown",
+  "jobAddress": "the property/job address if shown",
+  "concern": "the reported issue/concern",
+  "diagnosis": "the cause/diagnosis if shown",
+  "partsStatus": "any parts-on-order or availability info",
+  "priceEstimate": "dollar amount if shown, as a number string",
+  "documentType": "invoice|estimate|service_ticket|other",
+  "notes": "any other relevant handwritten notes"
+}
+If a field is not found, use null.` }
+        ]
+      }]
+    });
+
+    let docData;
+    try {
+      const rawText = extractRes.content.find(c => c.type === 'text')?.text || '{}';
+      docData = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    } catch(e) {
+      console.error('Quo document extraction parse error:', e.message);
+      return;
+    }
+
+    let cardInfo = null;
+    if (docData.workOrderNumber) {
+      try {
+        const searchRes = await executeAriTool('aptly_search_cards', { query: docData.workOrderNumber });
+        if (searchRes.items && searchRes.items.length) cardInfo = searchRes.items[0];
+      } catch(e) { console.error('Card correlation error:', e.message); }
+    }
+
+    const summaryLines = [
+      `📄 *Vendor Document Detected — ${vendor.name}*`,
+      docData.workOrderNumber ? `WO/HW#: ${docData.workOrderNumber}` : null,
+      docData.jobAddress ? `Address: ${docData.jobAddress}` : null,
+      docData.concern ? `Concern: ${docData.concern}` : null,
+      docData.diagnosis ? `Diagnosis: ${docData.diagnosis}` : null,
+      docData.partsStatus ? `Parts: ${docData.partsStatus}` : null,
+      docData.priceEstimate ? `Estimate: $${docData.priceEstimate}` : null,
+      docData.technician ? `Tech: ${docData.technician}` : null,
+      cardInfo ? `Matched Aptly card: ${cardInfo.title} (${cardInfo.id})` : (docData.workOrderNumber ? `⚠️ No matching Aptly card found for WO ${docData.workOrderNumber}` : null),
+      mediaUrl,
+    ].filter(Boolean).join('\n');
+
+    await client.chat.postMessage({ channel: ARI_CHANNEL, text: summaryLines });
+  } catch(e) {
+    console.error('Quo Slack listener error:', e.message);
   }
 });
 

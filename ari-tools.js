@@ -619,4 +619,36 @@ async function aptlyAptletLookup(address) {
   return { unit_aptly_id: null, building_aptly_id: null };
 }
 
-module.exports = { ARI_TOOLS: ALL_ARI_TOOLS, executeAriTool: executeAriToolFull };
+let vendorCache = null;
+let vendorCacheTime = 0;
+const VENDOR_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+async function getAllVendorsCached() {
+  const now = Date.now();
+  if (vendorCache && (now - vendorCacheTime) < VENDOR_CACHE_TTL) return vendorCache;
+  let allVendors = [];
+  for (let page = 1; page <= 10; page++) {
+    const data = await rvFetch('/contacts', { contactType: 'vendor', pageSize: 200, page });
+    const items = Array.isArray(data) ? data : (data.data || []);
+    if (!items.length) break;
+    allVendors = allVendors.concat(items.map(i => i.contact || i));
+    if (items.length < 200) break;
+  }
+  vendorCache = allVendors;
+  vendorCacheTime = now;
+  return vendorCache;
+}
+
+function normalizePhone(p) {
+  return (p || '').replace(/\D/g, '').replace(/^1(\d{10})$/, '$1');
+}
+
+async function findVendorByPhone(phone) {
+  const target = normalizePhone(phone);
+  if (!target) return null;
+  const vendors = await getAllVendorsCached();
+  const match = vendors.find(v => normalizePhone(v.phone) === target);
+  return match ? { name: match.name, contactId: match.contactID, phone: match.phone } : null;
+}
+
+module.exports = { ARI_TOOLS: ALL_ARI_TOOLS, executeAriTool: executeAriToolFull, findVendorByPhone };
