@@ -615,7 +615,7 @@ slackApp.event('message', async ({ event, client }) => {
     if (event.subtype && event.subtype !== 'bot_message') return;
 
     const text = extractQuoText(event);
-    console.log('QUO RAW EVENT for debugging:', JSON.stringify(event).slice(0, 1500));
+    console.log('QUO EXTRACTED TEXT for debugging:', JSON.stringify(text));
 
     const mediaMatch = text.match(/https:\/\/share\.quo\.com\/v1\/resource\/message-media\/[^\s|>"']+/);
     if (!mediaMatch) { console.log('QUO listener: no media URL found in this message, skipping'); return; }
