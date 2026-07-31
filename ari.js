@@ -625,11 +625,15 @@ slackApp.event('message', async ({ event, client }) => {
     const rawPhone = callMatch ? callMatch[1] : (phoneMatch ? '+1' + phoneMatch[1] + phoneMatch[2] + phoneMatch[3] : null);
     if (!rawPhone) { console.log('QUO listener: media found but no phone number extracted, skipping'); return; }
 
+    console.log('QUO PROGRESS: looking up vendor for', rawPhone, 'at', new Date().toISOString());
     const vendor = await findVendorByPhone(rawPhone);
+    console.log('QUO PROGRESS: vendor lookup done at', new Date().toISOString(), '-> ', vendor ? vendor.name : 'no match');
     if (!vendor) { console.log('QUO listener: media found, phone', rawPhone, 'not a known vendor, skipping'); return; }
 
     const mediaUrl = mediaMatch[0];
+    console.log('QUO PROGRESS: fetching image at', new Date().toISOString());
     const imgRes = await fetch(mediaUrl);
+    console.log('QUO PROGRESS: image fetched at', new Date().toISOString());
     if (!imgRes.ok) { console.error('Quo media fetch failed:', imgRes.status); return; }
     const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
     const base64Data = imgBuffer.toString('base64');
