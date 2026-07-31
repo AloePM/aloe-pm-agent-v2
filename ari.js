@@ -638,8 +638,10 @@ slackApp.event('message', async ({ event, client }) => {
     const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
     const base64Data = imgBuffer.toString('base64');
     const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+    console.log('QUO PROGRESS: image size', imgBuffer.length, 'bytes, type', contentType, 'calling Claude at', new Date().toISOString());
 
     const extractRes = await anthropic.messages.create({
+      timeout: 30000,
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       messages: [{
@@ -663,9 +665,11 @@ If a field is not found, use null.` }
       }]
     });
 
+    console.log('QUO PROGRESS: Claude responded at', new Date().toISOString());
     let docData;
     try {
       const rawText = extractRes.content.find(c => c.type === 'text')?.text || '{}';
+      console.log('QUO PROGRESS: raw Claude text:', rawText.slice(0, 300));
       docData = JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch(e) {
       console.error('Quo document extraction parse error:', e.message);
