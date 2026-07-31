@@ -658,7 +658,14 @@ slackApp.event('message', async ({ event, client }) => {
   "partsStatus": "any parts-on-order or availability info",
   "priceEstimate": "dollar amount if shown, as a number string",
   "documentType": "invoice|estimate|service_ticket|other",
-  "notes": "any other relevant handwritten notes"
+  "notes": "any other relevant handwritten notes",
+  "applianceType": "dryer|washer|refrigerator|dishwasher|water_heater|oven|stove|microwave|disposal|other, if identifiable",
+  "brand": "appliance brand/make if shown",
+  "model": "appliance model number if shown",
+  "unitAgeYears": "age of the unit in years as a number, if noted (e.g. handwritten '30+ years old')",
+  "vendorRecommendsReplacement": "true if vendor's own notes say not repairable/recommend replacement, false otherwise",
+  "partAvailable": "false if notes indicate part is unavailable/discontinued/on long backorder, true if available, null if not mentioned",
+  "estimatedReplacementCost": "your best-effort estimate of typical replacement cost for this exact appliance type, as a plain number, for comparison against the repair price shown"
 }
 If a field is not found, use null.` }
         ]
@@ -682,6 +689,51 @@ If a field is not found, use null.` }
         const searchRes = await executeAriTool('aptly_search_cards', { query: docData.workOrderNumber });
         if (searchRes.items && searchRes.items.length) cardInfo = searchRes.items[0];
       } catch(e) { console.error('Card correlation error:', e.message); }
+    }
+
+    // ── Not-repairable detection: age, cost>half replacement, part unavailable, vendor says not repairable ──
+    let replacementResult = null;
+    if (docData.workOrderNumber && docData.applianceType) {
+      const cleanNumber = (v) => { if (v === null || v === undefined) return null; const n = Number(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? null : n; };
+      const priceNum = cleanNumber(docData.priceEstimate);
+      const replCostNum = cleanNumber(docData.estimatedReplacementCost);
+      const ageFlag = docData.unitAgeYears && Number(docData.unitAgeYears) >= 10;
+      const costFlag = priceNum !== null && replCostNum !== null && replCostNum > 0 && (priceNum > replCostNum / 2);
+      const partFlag = docData.partAvailable === false || docData.partAvailable === 'false';
+      const vendorFlag = docData.vendorRecommendsReplacement === true || docData.vendorRecommendsReplacement === 'true';
+      const triggeredReasons = [
+        ageFlag ? `unit age ${docData.unitAgeYears}+ years` : null,
+        costFlag ? `repair cost $${priceNum} exceeds half of est. replacement $${replCostNum}` : null,
+        partFlag ? 'part not available' : null,
+        vendorFlag ? 'vendor recommends replacement' : null,
+      ].filter(Boolean);
+
+      if (triggeredReasons.length) {
+        try {
+          const woInfo = await executeAriTool('rv_get_work_order_by_number', { wo_number: docData.workOrderNumber });
+          if (woInfo && woInfo.workOrderID) {
+            if (String(woInfo.workOrderStatusID) === '2' || String(woInfo.workOrderStatusID) === '18') {
+              console.log('Replacement trigger: WO', docData.workOrderNumber, 'already closed/completed — skipping to avoid duplicate replacement WO');
+            } else {
+              const closeRes = await executeAriTool('rv_close_work_order', { rv_wo_id: woInfo.workOrderID });
+              const applianceLabel = (docData.applianceType || 'appliance').replace(/_/g, ' ');
+              const applianceLabelCap = applianceLabel.charAt(0).toUpperCase() + applianceLabel.slice(1);
+              const applianceDetail = docData.brand && docData.model ? `${docData.brand} ${docData.model} ${applianceLabel}` : applianceLabel;
+              const description = `${applianceLabelCap} replacement needed — ${applianceDetail} is ${docData.concern || 'not functioning'}${docData.diagnosis ? ' due to ' + docData.diagnosis : ''}. Unit is ${docData.unitAgeYears ? docData.unitAgeYears + ' years old' : 'beyond economical repair'} and vendor (${vendor.name}) recommends replacement over repair. New ${applianceLabel} needs to be ordered and installed.`;
+              const createRes = await executeAriTool('rv_create_replacement_work_order', {
+                property_id: woInfo.propertyID, unit_id: woInfo.unitID, lease_id: woInfo.leaseID, description,
+              });
+              replacementResult = { closeRes, createRes, description, triggeredReasons };
+              await client.chat.postMessage({
+                channel: ARI_CHANNEL,
+                text: `🔄 *Appliance Replacement Auto-Triggered — ${vendor.name}*\nOriginal WO #${docData.workOrderNumber} closed (Completed).\nReason: ${triggeredReasons.join(', ')}\n\nNew WO ${createRes.workOrderNumber ? '#' + createRes.workOrderNumber : ''} created:\n${description}`,
+              });
+            }
+          } else {
+            console.log('Replacement trigger: could not resolve internal WO ID for', docData.workOrderNumber);
+          }
+        } catch(e) { console.error('Replacement workflow error:', e.message); }
+      }
     }
 
     const summaryLines = [
