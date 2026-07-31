@@ -589,22 +589,44 @@ Triage this work order: classify urgency (Emergency/Urgent/Routine), identify th
 const QUO_SLACK_CHANNEL = 'C06S10SKP98';
 const QUO_BOT_ID = 'B06SEN57763';
 
+function extractQuoText(event) {
+  let combined = event.text || '';
+  if (event.attachments && event.attachments.length) {
+    for (const att of event.attachments) {
+      if (att.fallback) combined += '\n' + att.fallback;
+      if (att.text) combined += '\n' + att.text;
+      if (att.image_url) combined += '\n' + att.image_url;
+      if (att.thumb_url) combined += '\n' + att.thumb_url;
+      if (att.blocks) {
+        for (const block of att.blocks) {
+          if (block.text && block.text.text) combined += '\n' + block.text.text;
+          if (block.image_url) combined += '\n' + block.image_url;
+        }
+      }
+    }
+  }
+  return combined;
+}
+
 slackApp.event('message', async ({ event, client }) => {
   try {
     if (event.channel !== QUO_SLACK_CHANNEL) return;
     if (event.bot_id !== QUO_BOT_ID) return;
-    if (event.subtype) return;
+    if (event.subtype && event.subtype !== 'bot_message') return;
 
-    const text = event.text || '';
-    const mediaMatch = text.match(/https:\/\/share\.quo\.com\/v1\/resource\/message-media\/[^\s|>]+/);
-    if (!mediaMatch) return;
+    const text = extractQuoText(event);
+    console.log('QUO RAW EVENT for debugging:', JSON.stringify(event).slice(0, 1500));
 
+    const mediaMatch = text.match(/https:\/\/share\.quo\.com\/v1\/resource\/message-media\/[^\s|>"']+/);
+    if (!mediaMatch) { console.log('QUO listener: no media URL found in this message, skipping'); return; }
+
+    const callMatch = text.match(/call=(\+\d{11,15})/);
     const phoneMatch = text.match(/\((\d{3})\)\s?(\d{3})-(\d{4})/);
-    if (!phoneMatch) return;
-    const rawPhone = '+1' + phoneMatch[1] + phoneMatch[2] + phoneMatch[3];
+    const rawPhone = callMatch ? callMatch[1] : (phoneMatch ? '+1' + phoneMatch[1] + phoneMatch[2] + phoneMatch[3] : null);
+    if (!rawPhone) { console.log('QUO listener: media found but no phone number extracted, skipping'); return; }
 
     const vendor = await findVendorByPhone(rawPhone);
-    if (!vendor) return;
+    if (!vendor) { console.log('QUO listener: media found, phone', rawPhone, 'not a known vendor, skipping'); return; }
 
     const mediaUrl = mediaMatch[0];
     const imgRes = await fetch(mediaUrl);
@@ -675,8 +697,11 @@ If a field is not found, use null.` }
 
 webhookApp.post('/webhook/quo', express.json(), async (req, res) => {
   try {
-    const { from, inboxNumber, body, hasAttachment, mediaUrls, isInvoice, isQuote, vendorName } = req.body;
-    console.log('Quo message from:', from, 'vendor:', vendorName, 'attachment:', hasAttachment, 'invoice:', isInvoice, 'quote:', isQuote);
+    // Invoice/quote detection now handled by the #quo Slack channel listener above.
+    // This route stays live for the raw event feed but no longer posts guesses to Slack.
+    const { from } = req.body;
+    console.log('Quo webhook received (handled via Slack channel listener):', from);
+    return res.json({ ok: true });
 
     const type = isInvoice ? 'INVOICE' : isQuote ? 'QUOTE' : 'ATTACHMENT';
     const emoji = isInvoice ? '🧾' : isQuote ? '💰' : '📎';
