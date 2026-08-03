@@ -7,28 +7,23 @@ const APTLY_COMMENT_USER_ID = 'EnwdF5LSwiY5Wqw2o'; // "Aptly Support" — used t
 
 async function aptlySearchUnitBoard(q) {
   try {
-    const r = await fetch(`https://core-api.getaptly.com/api/board/unit?page=0&pageSize=100&query=${encodeURIComponent(q)}`, {
-      headers: { 'x-token': APTLY_TOKEN }
-    });
-    const data = await r.json();
-    const units = data.data || data.cards || (Array.isArray(data) ? data : []);
-    const match = units.find(u => {
-      const name = (u.name || '').toLowerCase();
-      return name.includes(q.toLowerCase()) || name.startsWith(q.toLowerCase());
-    });
-    if (match) {
-      const loc = (match.location || [])[0] || {};
-      const unit = (match.unit || [])[0] || match;
-      return {
-        unit_aptly_id: unit._id || match._id || null,
-        unit_aptly_name: unit.name || match.name || null,
-        unit_aptly_duogram: unit.duogram || match.duogram || null,
-        building_aptly_id: loc._id || null,
-        building_aptly_name: loc.name || null,
-        building_aptly_duogram: loc.duogram || null
-      };
+    const qLower = (q || '').toLowerCase();
+    const houseNum = qLower.match(/^\d+/)?.[0];
+    let allUnits = [];
+    for (let page = 0; page < 10; page++) {
+      const r = await fetch(`https://core-api.getaptly.com/api/board/unit?page=${page}&pageSize=100`, { headers: { 'x-token': APTLY_TOKEN } });
+      const data = await r.json();
+      const batch = data.data || [];
+      if (batch.length === 0) break;
+      allUnits = allUnits.concat(batch);
+      if (batch.length < 100) break;
     }
-    return null;
+    let match = houseNum ? allUnits.find(u => u.address && u.address.streetNumber === houseNum) : null;
+    if (!match) match = allUnits.find(u => (u.name || '').toLowerCase().includes(qLower));
+    if (!match) return null;
+    const loc = (match.location || [])[0] || {};
+    const unit = (match.unit || [])[0] || match;
+    return { unit_aptly_id: unit._id || match._id || null, unit_aptly_name: unit.name || match.name || null, unit_aptly_duogram: unit.duogram || match.duogram || null, building_aptly_id: loc._id || null, building_aptly_name: loc.name || null, building_aptly_duogram: loc.duogram || null };
   } catch(e) { console.error('aptlySearchUnitBoard error:', e.message); return null; }
 }
 
