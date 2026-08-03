@@ -144,28 +144,14 @@ async function executeKatTool(toolName, input) {
         return { error: `Property not found: ${input.address}`, properties: [] };
       }
       case 'rv_get_lease': {
-        const r = await fetch(`${RENTVINE_BASE}/leases/${input.leaseID}`, {
-          headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT }
-        });
-        const data = await r.json();
-        const lease = data.lease || data;
-        // Get tenants — first try lease.tenants array (names directly on lease record)
-        let tenants = [];
-        if (Array.isArray(lease.tenants) && lease.tenants.length) {
-          tenants = lease.tenants.filter(Boolean);
-        } else {
-          // Fallback: call /tenants endpoint
-          try {
-            const tr = await fetch(`${RENTVINE_BASE}/leases/${input.leaseID}/tenants`, {
-              headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT }
-            });
-            const td = await tr.json();
-            const arr = Array.isArray(td) ? td : (td.data || []);
-            tenants = arr.map(t => t.contact?.name || t.name || t.displayName || '').filter(Boolean);
-          } catch(e) {}
-        }
-        return { leaseID: lease.leaseID, startDate: lease.startDate, endDate: lease.endDate, moveInDate: lease.moveInDate, status: lease.primaryLeaseStatusID, tenants };
-      }
+  const r = await fetch(`${RENTVINE_BASE}/leases/${input.leaseID}?includes=tenants`, {
+    headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT }
+  });
+  const data = await r.json();
+  const lease = data.lease || data;
+  const tenants = (lease.tenants || []).map(t => t.contact?.name || t.name || t.displayName || '').filter(Boolean);
+  return { leaseID: lease.leaseID, startDate: lease.startDate, endDate: lease.endDate, moveInDate: lease.moveInDate, status: lease.primaryLeaseStatusID, tenants };
+}
       case 'rv_add_lease_charge': {
         const azNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
         const datePosted = azNow.toISOString().slice(0, 10);
