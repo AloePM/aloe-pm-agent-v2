@@ -128,6 +128,7 @@ const ARI_TOOLS = [
   { name: 'aptly_update_card', description: 'Update a field on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, field_name: { type: 'string' }, value: {} }, required: ['card_id','field_name','value'] } },
   { name: 'rv_dispatch_vendor', description: 'Look up a vendor in Rentvine by name AND assign them to a work order in one step. Pass vendor name and the card rentvineId. This is the ONLY tool needed to assign a vendor - it handles search and assignment automatically.', input_schema: { type: 'object', properties: { vendor_name: { type: 'string', description: 'Vendor name to search for in Rentvine' }, rv_wo_id: { type: 'string', description: 'Rentvine work order ID from aptly_get_card rentvineId field' }, send_notification: { type: 'boolean', description: 'Send notification to vendor (default true)' } }, required: ['vendor_name','rv_wo_id'] } },
   { name: 'rv_get_work_order_by_number', description: 'Look up a Rentvine work order by its WO number to get internal IDs (workOrderID, propertyID, unitID, leaseID) needed for closing or creating related work orders.', input_schema: { type: 'object', properties: { wo_number: { type: 'string' } }, required: ['wo_number'] } },
+  { name: 'sync_wo_status_to_aptly', description: 'Check if a work order Rentvine Status shows Completed or Cancelled while Aptly Stage has not been updated to match (vendors set these two statuses directly in Rentvine, never through an Aptly stage change). If out of sync, updates Stage to mirror Rentvine Status exactly. Safe to call anytime -- does nothing if already in sync or Rentvine Status is not terminal.', input_schema: { type: 'object', properties: { card_id: { type: 'string', description: 'Aptly work order card ID' } }, required: ['card_id'] } },
   { name: 'rv_close_work_order', description: 'FALLBACK ONLY, requires explicit staff confirmation first. Standard process: update the Aptly card stage via aptly_update_card — Rentvine normally auto-syncs from that. Only propose this if get_wo_sync_history shows the work order did NOT auto-close/cancel in Rentvine after the Aptly stage was updated. NEVER call this with confirmed=true unless staff has explicitly replied yes/confirmed in this Slack thread. First call with confirmed omitted or false to get a confirmation prompt to relay to staff, then only call again with confirmed=true after they reply.', input_schema: { type: 'object', properties: { rv_wo_id: { type: 'string', description: 'Internal Rentvine workOrderID, not the WO number' }, confirmed: { type: 'boolean', description: 'Must be true, and only after staff has explicitly confirmed in this Slack thread. Defaults to false.' } }, required: ['rv_wo_id'] } },
   { name: 'rv_create_replacement_work_order', description: 'Create a new Rentvine work order to purchase and install a replacement appliance when the original is not repairable. Assigns to the Aloe Reimbursements vendor (3229).', input_schema: { type: 'object', properties: { property_id: { type: 'string' }, unit_id: { type: 'string' }, lease_id: { type: 'string' }, description: { type: 'string', description: 'Full description including appliance type, brand, model, symptom, cause, age, and vendor recommendation' } }, required: ['property_id','description'] } },
   { name: 'get_vendor_for_trade', description: 'Get the right vendor for a trade and location from the Aloe vendor directory. Always use this BEFORE rv_dispatch_vendor to find the correct vendor for the job. Pass the trade (e.g. HVAC, Plumbing, Garage Doors, Cleaning, Handyman, Roofing, Landscaping, Appliances) and the city/zone (e.g. Maricopa, Chandler, Gilbert, Scottsdale, Mesa, Phoenix). Returns the recommended vendor name, phone, and any important notes.', input_schema: { type: 'object', properties: { trade: { type: 'string', description: 'Trade category e.g. HVAC, Plumbing, Garage Doors, Cleaning, Handyman, Roofing, Landscaping, Appliances, Pest Control, Electrical' }, zone: { type: 'string', description: 'City or zone e.g. Maricopa, Chandler, Gilbert, Scottsdale, Mesa, Phoenix, East Valley' } }, required: ['trade'] } },
@@ -252,6 +253,27 @@ async function executeAriTool(toolName, input) {
         });
         const data = await r.json();
         return r.ok ? { success: true } : { error: 'Aptly error', detail: data };
+      }
+      case 'sync_wo_status_to_aptly': {
+        const r = await fetch(`https://core-api.getaptly.com/api/board/workOrder/${input.card_id}`, { headers: { 'x-token': APTLY_TOKEN } });
+        const data = await r.json();
+        const card = data.data || data;
+        if (!r.ok) return { error: `Aptly ${r.status}` };
+        const rvStatus = (card['Rentvine Status'] || '').trim();
+        const stage = (card['Stage'] || '').trim();
+        const TERMINAL = ['Completed', 'Cancelled'];
+        const rvStatusNorm = TERMINAL.find(t => t.toLowerCase() === rvStatus.toLowerCase());
+        if (!rvStatusNorm) return { success: true, action: 'none', reason: `Rentvine Status is "${rvStatus}", not terminal -- nothing to sync.` };
+        if (stage.toLowerCase() === rvStatusNorm.toLowerCase()) return { success: true, action: 'none', reason: `Already in sync -- Stage is already "${stage}".` };
+        const body = { _id: input.card_id, stage: rvStatusNorm };
+        const updateR = await fetch('https://core-api.getaptly.com/api/board/workOrder', {
+          method: 'POST',
+          headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const updateData = await updateR.json();
+        if (!updateR.ok) return { error: 'Aptly update error', detail: updateData };
+        return { success: true, action: 'updated', oldStage: stage, newStage: rvStatusNorm, rentvineStatus: rvStatus };
       }
       case 'aptly_dispatch_vendor': {
         // Look up vendor ID if not provided
