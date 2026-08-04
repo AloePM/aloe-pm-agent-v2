@@ -872,7 +872,7 @@ async function runDailyWOStatusSync() {
         headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      results.push({ woNumber: c['Work Order Number'] || c.name, oldStage, newStage: norm, ok: updateR.ok });
+      results.push({ woNumber: (c['workOrderNumber'] || c['Work Order Number']) || c.name, oldStage, newStage: norm, ok: updateR.ok });
     }
     const succeeded = results.filter(r => r.ok);
     let msg = `\ud83d\udd04 *Daily WO Status Sync -- ${succeeded.length} work order${succeeded.length !== 1 ? 's' : ''} updated*\n`;
@@ -909,6 +909,7 @@ async function runDailyRVStatusSync() {
   console.log('Running daily RV status sync...');
   try {
     let allCards = [];
+    const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days, matches fetchAllAptlyClosedWOs
     for (const archived of ['false', 'true']) {
       for (let pg = 0; pg < 20; pg++) {
         const r = await fetch(`https://core-api.getaptly.com/api/board/workOrder?page=${pg}&pageSize=100&includeArchived=${archived}`, { headers: { 'x-token': APTLY_TOKEN } });
@@ -916,7 +917,11 @@ async function runDailyRVStatusSync() {
         const batch = Array.isArray(data) ? data : (data.data || []);
         if (!batch.length) break;
         const existingIds = new Set(allCards.map(c => c._id));
-        batch.forEach(c => { if (!existingIds.has(c._id)) allCards.push(c); });
+        batch.forEach(c => {
+          if (existingIds.has(c._id)) return;
+          const isRecent = c.stageUpdatedAt ? new Date(c.stageUpdatedAt).getTime() > cutoff : (c.createdAt ? new Date(c.createdAt).getTime() > cutoff : true);
+          if (isRecent) allCards.push(c);
+        });
         if (batch.length < 100) break;
       }
     }
@@ -932,13 +937,13 @@ async function runDailyRVStatusSync() {
     for (const c of toSync) {
       const stage = (c['Stage'] || c.stage || '').trim();
       const rvWoId = c['rentvineId'];
-      if (!rvWoId) { results.push({ woNumber: c['Work Order Number'] || c.name, ok: false }); continue; }
+      if (!rvWoId) { results.push({ woNumber: (c['workOrderNumber'] || c['Work Order Number']) || c.name, ok: false }); continue; }
       const updateR = await fetch(`${RENTVINE_BASE}/maintenance/work-orders/${rvWoId}`, {
         method: 'POST',
         headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' },
         body: JSON.stringify({ workOrderStatusID: STATUS_ID[stage] }),
       });
-      results.push({ woNumber: c['Work Order Number'] || c.name, aptlyStage: stage, ok: updateR.ok });
+      results.push({ woNumber: (c['workOrderNumber'] || c['Work Order Number']) || c.name, aptlyStage: stage, ok: updateR.ok });
     }
     const succeeded = results.filter(r => r.ok);
     let msg = `🔄 *Daily RV Status Sync -- ${succeeded.length} work order${succeeded.length !== 1 ? 's' : ''} updated*\n`;
