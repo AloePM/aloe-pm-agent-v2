@@ -144,7 +144,7 @@ async function executeKatTool(toolName, input) {
         return { error: `Property not found: ${input.address}`, properties: [] };
       }
       case 'rv_get_lease': {
-  const r = await fetch(`${RENTVINE_BASE}/leases/${input.leaseID}?includes=tenants`, {
+  const r = await fetch(`${RENTVINE_BASE}/leases/${input.leaseID || input.lease_id}?includes=tenants`, {
     headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT }
   });
   const data = await r.json();
