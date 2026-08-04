@@ -636,7 +636,7 @@ async function aptlyVendorSearch(name, phone) {
     c.typeId === 'vendor' ||
     (c.fullname && name && c.fullname.toLowerCase().includes(name.toLowerCase()))
   );
-  return contacts.map(c => ({ _id: c._id, name: c.fullname, type: c.contactType }));
+  return contacts.map(c => ({ _id: c._id, name: c.fullname, type: c.contactType, phone: (c.phones && c.phones[0]) || null, email: (c.emails && c.emails[0]) || null }));
 }
 
 async function getGCSToken() {
