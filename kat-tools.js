@@ -161,7 +161,7 @@ async function executeKatTool(toolName, input) {
           description: input.description,
           datePosted
         };
-        const r = await fetch(`${RENTVINE_BASE}/accounting/leases/${input.leaseID}/charges`, {
+        const r = await fetch(`${RENTVINE_BASE}/accounting/leases/${input.leaseID || input.lease_id}/charges`, {
           method: 'POST',
           headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -273,7 +273,7 @@ async function executeKatTool(toolName, input) {
         return r.ok ? { success: true } : { error: `Aptly ${r.status}` };
       }
       case 'rv_get_lease_balance': {
-        const r = await fetch(`${RENTVINE_BASE}/leases/${input.lease_id}/balance-due`, { headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT } });
+        const r = await fetch(`${RENTVINE_BASE}/leases/${input.leaseID || input.lease_id}/balance-due`, { headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT } });
         const data = await r.json();
         return r.ok ? data : { error: `Rentvine ${r.status}` };
       }
