@@ -840,6 +840,68 @@ async function runDailyFollowUp() {
   }
 }
 
+async function runDailyWOStatusSync() {
+  console.log('Running daily WO status sync...');
+  try {
+    let allCards = [];
+    for (let pg = 0; pg < 20; pg++) {
+      const r = await fetch(`https://core-api.getaptly.com/api/board/workOrder?page=${pg}&pageSize=100`, { headers: { 'x-token': APTLY_TOKEN } });
+      const data = await r.json();
+      const batch = Array.isArray(data) ? data : (data.data || []);
+      if (!batch.length) break;
+      allCards = allCards.concat(batch);
+      if (batch.length < 100) break;
+    }
+    const TERMINAL = ['Completed', 'Cancelled'];
+    const toSync = allCards.filter(c => {
+      const rvStatus = (c['Rentvine Status'] || '').trim();
+      const stage = (c['Stage'] || c.stage || '').trim();
+      const norm = TERMINAL.find(t => t.toLowerCase() === rvStatus.toLowerCase());
+      return norm && stage.toLowerCase() !== norm.toLowerCase();
+    });
+    console.log(`WO status sync: ${allCards.length} total cards, ${toSync.length} need sync`);
+    if (!toSync.length) return;
+    const results = [];
+    for (const c of toSync) {
+      const rvStatus = (c['Rentvine Status'] || '').trim();
+      const norm = TERMINAL.find(t => t.toLowerCase() === rvStatus.toLowerCase());
+      const oldStage = (c['Stage'] || c.stage || '').trim();
+      const body = { _id: c._id, stage: norm };
+      const updateR = await fetch('https://core-api.getaptly.com/api/board/workOrder', {
+        method: 'POST',
+        headers: { 'x-token': APTLY_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      results.push({ woNumber: c['Work Order Number'] || c.name, oldStage, newStage: norm, ok: updateR.ok });
+    }
+    const succeeded = results.filter(r => r.ok);
+    let msg = `\ud83d\udd04 *Daily WO Status Sync -- ${succeeded.length} work order${succeeded.length !== 1 ? 's' : ''} updated*\n`;
+    msg += `_Rentvine showed Completed/Cancelled, Aptly Stage was corrected to match:_\n\n`;
+    for (const r of succeeded) { msg += `\u2022 *WO #${r.woNumber}* -- ${r.oldStage} -> *${r.newStage}*\n`; }
+    const failed = results.filter(r => !r.ok);
+    if (failed.length) { msg += `\n\u26a0\ufe0f ${failed.length} failed to update -- needs manual check: ` + failed.map(r => `WO #${r.woNumber}`).join(', '); }
+    await slackApp.client.chat.postMessage({ channel: ARI_CHANNEL, text: msg });
+    console.log('WO status sync posted to Slack');
+  } catch(e) { console.error('Daily WO status sync error:', e.message); }
+}
+
+function scheduleWOStatusSync() {
+  function msUntilNext10amAZ() {
+    const now = new Date();
+    const azNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
+    const next = new Date(azNow);
+    next.setHours(10, 0, 0, 0);
+    if (azNow >= next) next.setDate(next.getDate() + 1);
+    return next - azNow;
+  }
+  const ms = msUntilNext10amAZ();
+  console.log(`WO status sync scheduled in ${Math.round(ms/60000)} min`);
+  setTimeout(() => {
+    runDailyWOStatusSync();
+    setInterval(runDailyWOStatusSync, 24 * 60 * 60 * 1000);
+  }, ms);
+}
+
 function scheduleFollowUp() {
   // Arizona = UTC-7, no DST. 9am AZ = 16:00 UTC
   function msUntilNext9amAZ() {
@@ -910,6 +972,7 @@ slackApp.action('field_update_skip_ari', async ({ ack, body, action }) => {
   await slackApp.start();
   console.log('⚡ Ari is online and listening for @Ari mentions');
   scheduleFollowUp();
+  scheduleWOStatusSync();
 
   const WEBHOOK_PORT = process.env.WEBHOOK_PORT || 3001;
   webhookApp.listen(WEBHOOK_PORT, () => {
