@@ -149,7 +149,7 @@ async function executeKatTool(toolName, input) {
   });
   const data = await r.json();
   const lease = data.lease || data;
-  const tenants = (lease.tenants || []).map(t => t.contact?.name || t.name || t.displayName || '').filter(Boolean);
+  const tenants = Array.isArray(lease.tenants) ? lease.tenants.filter(Boolean) : [];
   return { leaseID: lease.leaseID, startDate: lease.startDate, endDate: lease.endDate, moveInDate: lease.moveInDate, status: lease.primaryLeaseStatusID, tenants };
 }
       case 'rv_add_lease_charge': {
