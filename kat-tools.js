@@ -83,7 +83,7 @@ const KAT_TOOLS = [
   },
   {
     name: 'rv_add_lease_charge',
-    description: 'Post a charge to a tenant lease in Rentvine. For HOA admin fee: amount=5, chargeAccountID=58, description="HOA Notice". For HOA violation fine: amount=[fine amount], chargeAccountID=150, description="HOA Violation Fine".',
+    description: 'Post a charge to a tenant lease in Rentvine. For HOA admin fee: amount=5, chargeAccountID=58, description="HOA Admin Fee". For HOA violation fine: amount=[fine amount], chargeAccountID=150, description="HOA Violation Fine".',
     input_schema: { type: 'object', properties: { leaseID: { type: 'string', description: 'Rentvine lease ID' }, amount: { type: 'number', description: 'Charge amount' }, chargeAccountID: { type: 'number', description: '58 = HOA Admin Fee ($5), 150 = HOA Violation Fine' }, description: { type: 'string', description: 'Charge description' } }, required: ['leaseID', 'amount', 'chargeAccountID', 'description'] }
   },
   {
@@ -153,6 +153,7 @@ async function executeKatTool(toolName, input) {
   return { leaseID: lease.leaseID, startDate: lease.startDate, endDate: lease.endDate, moveInDate: lease.moveInDate, status: lease.primaryLeaseStatusID, tenants };
 }
       case 'rv_add_lease_charge': {
+        if (!input.chargeAccountID) return { error: "Missing chargeAccountID — charge NOT sent to Rentvine. HOA admin fee = 58, HOA violation fine = 150." };
         const azNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
         const datePosted = azNow.toISOString().slice(0, 10);
         const body = {
