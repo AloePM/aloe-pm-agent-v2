@@ -854,7 +854,7 @@ async function runDailyWOStatusSync() {
     }
     const TERMINAL = ['Completed', 'Cancelled'];
     const toSync = allCards.filter(c => {
-      const rvStatus = (c['Rentvine Status'] || '').trim();
+      const rvStatus = (c['rentvineStatus'] || '').trim();
       const stage = (c['Stage'] || c.stage || '').trim();
       const norm = TERMINAL.find(t => t.toLowerCase() === rvStatus.toLowerCase());
       return norm && stage.toLowerCase() !== norm.toLowerCase();
@@ -863,7 +863,7 @@ async function runDailyWOStatusSync() {
     if (!toSync.length) return;
     const results = [];
     for (const c of toSync) {
-      const rvStatus = (c['Rentvine Status'] || '').trim();
+      const rvStatus = (c['rentvineStatus'] || '').trim();
       const norm = TERMINAL.find(t => t.toLowerCase() === rvStatus.toLowerCase());
       const oldStage = (c['Stage'] || c.stage || '').trim();
       const body = { _id: c._id, stage: norm };
@@ -902,6 +902,70 @@ function scheduleWOStatusSync() {
   }, ms);
 }
 
+const RENTVINE_BASE = `https://${process.env.RENTVINE_ACCOUNT}.rentvine.com/api/manager`;
+const RENTVINE_AUTH = Buffer.from(`${process.env.RENTVINE_API_KEY}:${process.env.RENTVINE_API_SECRET}`).toString('base64');
+
+async function runDailyRVStatusSync() {
+  console.log('Running daily RV status sync...');
+  try {
+    let allCards = [];
+    for (const archived of ['false', 'true']) {
+      for (let pg = 0; pg < 20; pg++) {
+        const r = await fetch(`https://core-api.getaptly.com/api/board/workOrder?page=${pg}&pageSize=100&includeArchived=${archived}`, { headers: { 'x-token': APTLY_TOKEN } });
+        const data = await r.json();
+        const batch = Array.isArray(data) ? data : (data.data || []);
+        if (!batch.length) break;
+        const existingIds = new Set(allCards.map(c => c._id));
+        batch.forEach(c => { if (!existingIds.has(c._id)) allCards.push(c); });
+        if (batch.length < 100) break;
+      }
+    }
+    const STATUS_ID = { 'Completed': '2', 'Cancelled': '3' };
+    const toSync = allCards.filter(c => {
+      const stage = (c['Stage'] || c.stage || '').trim();
+      const rvStatus = (c['rentvineStatus'] || '').trim();
+      return STATUS_ID[stage] && rvStatus.toLowerCase() !== stage.toLowerCase();
+    });
+    console.log(`RV status sync: ${allCards.length} total cards, ${toSync.length} need sync`);
+    if (!toSync.length) return;
+    const results = [];
+    for (const c of toSync) {
+      const stage = (c['Stage'] || c.stage || '').trim();
+      const rvWoId = c['rentvineId'];
+      if (!rvWoId) { results.push({ woNumber: c['Work Order Number'] || c.name, ok: false }); continue; }
+      const updateR = await fetch(`${RENTVINE_BASE}/maintenance/work-orders/${rvWoId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workOrderStatusID: STATUS_ID[stage] }),
+      });
+      results.push({ woNumber: c['Work Order Number'] || c.name, aptlyStage: stage, ok: updateR.ok });
+    }
+    const succeeded = results.filter(r => r.ok);
+    let msg = `🔄 *Daily RV Status Sync -- ${succeeded.length} work order${succeeded.length !== 1 ? 's' : ''} updated*\n`;
+    msg += `_Aptly showed Completed/Cancelled, Rentvine was corrected to match:_\n\n`;
+    for (const r of succeeded) { msg += `• *WO #${r.woNumber}* -- Rentvine set to *${r.aptlyStage}*\n`; }
+    const failed = results.filter(r => !r.ok);
+    if (failed.length) { msg += `\n⚠️ ${failed.length} failed to update -- needs manual check: ` + failed.map(r => `WO #${r.woNumber}`).join(', '); }
+    await slackApp.client.chat.postMessage({ channel: ARI_CHANNEL, text: msg });
+    console.log('RV status sync posted to Slack');
+  } catch(e) { console.error('Daily RV status sync error:', e.message); }
+}
+function scheduleRVStatusSync() {
+  function msUntilNext1015amAZ() {
+    const now = new Date();
+    const azNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
+    const next = new Date(azNow);
+    next.setHours(10, 15, 0, 0);
+    if (azNow >= next) next.setDate(next.getDate() + 1);
+    return next - azNow;
+  }
+  const ms = msUntilNext1015amAZ();
+  console.log(`RV status sync scheduled in ${Math.round(ms/60000)} min`);
+  setTimeout(() => {
+    runDailyRVStatusSync();
+    setInterval(runDailyRVStatusSync, 24 * 60 * 60 * 1000);
+  }, ms);
+}
 function scheduleFollowUp() {
   // Arizona = UTC-7, no DST. 9am AZ = 16:00 UTC
   function msUntilNext9amAZ() {
@@ -973,6 +1037,7 @@ slackApp.action('field_update_skip_ari', async ({ ack, body, action }) => {
   console.log('⚡ Ari is online and listening for @Ari mentions');
   scheduleFollowUp();
   scheduleWOStatusSync();
+  scheduleRVStatusSync();
 
   const WEBHOOK_PORT = process.env.WEBHOOK_PORT || 3001;
   webhookApp.listen(WEBHOOK_PORT, () => {
