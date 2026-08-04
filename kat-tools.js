@@ -81,6 +81,8 @@ const KAT_TOOLS = [
     description: 'Get lease details for a lease ID including tenant names, move-in date, lease start/end dates, and lease status.',
     input_schema: { type: 'object', properties: { leaseID: { type: 'string', description: 'Rentvine lease ID' } }, required: ['leaseID'] }
   },
+  { name: 'post_hoa_admin_fee', description: 'Post the standard $5 HOA Admin Fee charge. Use this for every HOA notice — do NOT use rv_add_lease_charge, the account ID is already built in.', input_schema: { type: 'object', properties: { leaseID: { type: 'string' } }, required: ['leaseID'] } },
+  { name: 'post_hoa_violation_fine', description: 'Post an HOA violation fine charge. Do NOT use rv_add_lease_charge, the account ID is already built in.', input_schema: { type: 'object', properties: { leaseID: { type: 'string' }, amount: { type: 'number' } }, required: ['leaseID', 'amount'] } },
   {
     name: 'rv_add_lease_charge',
     description: 'Post a charge to a tenant lease in Rentvine. For HOA admin fee: amount=5, chargeAccountID=58, description="HOA Admin Fee". For HOA violation fine: amount=[fine amount], chargeAccountID=150, description="HOA Violation Fine".',
@@ -152,6 +154,22 @@ async function executeKatTool(toolName, input) {
   const tenants = Array.isArray(lease.tenants) ? lease.tenants.filter(Boolean) : [];
   return { leaseID: lease.leaseID, startDate: lease.startDate, endDate: lease.endDate, moveInDate: lease.moveInDate, status: lease.primaryLeaseStatusID, tenants };
 }
+      case 'post_hoa_admin_fee': {
+        const leaseID = input.leaseID || input.lease_id;
+        const azNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
+        const r = await fetch(`${RENTVINE_BASE}/accounting/leases/${leaseID}/charges`, { method: 'POST', headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' }, body: JSON.stringify({ chargeAccountID: 58, amount: '5', description: 'HOA Admin Fee', datePosted: azNow.toISOString().slice(0,10) }) });
+        const result = await r.json();
+        if (!r.ok) return { error: `Rentvine ${r.status}`, detail: JSON.stringify(result).slice(0,200) };
+        return { success: true, leaseID, amount: 5, chargeAccountID: 58 };
+      }
+      case 'post_hoa_violation_fine': {
+        const leaseID = input.leaseID || input.lease_id;
+        const azNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
+        const r = await fetch(`${RENTVINE_BASE}/accounting/leases/${leaseID}/charges`, { method: 'POST', headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' }, body: JSON.stringify({ chargeAccountID: 150, amount: String(input.amount), description: 'HOA Violation Fine', datePosted: azNow.toISOString().slice(0,10) }) });
+        const result = await r.json();
+        if (!r.ok) return { error: `Rentvine ${r.status}`, detail: JSON.stringify(result).slice(0,200) };
+        return { success: true, leaseID, amount: input.amount, chargeAccountID: 150 };
+      }
       case 'rv_add_lease_charge': {
         if (!input.chargeAccountID) return { error: "Missing chargeAccountID — charge NOT sent to Rentvine. HOA admin fee = 58, HOA violation fine = 150." };
         const azNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' }));
