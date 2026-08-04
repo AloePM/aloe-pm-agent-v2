@@ -127,6 +127,9 @@ const ARI_TOOLS = [
   { name: 'aptly_get_comments', description: 'Get all comments on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' } }, required: ['card_id'] } },
   { name: 'aptly_update_card', description: 'Update a field on a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, field_name: { type: 'string' }, value: {} }, required: ['card_id','field_name','value'] } },
   { name: 'rv_dispatch_vendor', description: 'Look up a vendor in Rentvine by name AND assign them to a work order in one step. Pass vendor name and the card rentvineId. This is the ONLY tool needed to assign a vendor - it handles search and assignment automatically.', input_schema: { type: 'object', properties: { vendor_name: { type: 'string', description: 'Vendor name to search for in Rentvine' }, rv_wo_id: { type: 'string', description: 'Rentvine work order ID from aptly_get_card rentvineId field' }, send_notification: { type: 'boolean', description: 'Send notification to vendor (default true)' } }, required: ['vendor_name','rv_wo_id'] } },
+  { name: 'rv_get_work_order_by_number', description: 'Look up a Rentvine work order by its WO number to get internal IDs (workOrderID, propertyID, unitID, leaseID) needed for closing or creating related work orders.', input_schema: { type: 'object', properties: { wo_number: { type: 'string' } }, required: ['wo_number'] } },
+  { name: 'rv_close_work_order', description: 'Close a Rentvine work order as Completed. Use when a vendor invoice/estimate indicates repair is done or replacement is needed instead of repair.', input_schema: { type: 'object', properties: { rv_wo_id: { type: 'string', description: 'Internal Rentvine workOrderID, not the WO number' } }, required: ['rv_wo_id'] } },
+  { name: 'rv_create_replacement_work_order', description: 'Create a new Rentvine work order to purchase and install a replacement appliance when the original is not repairable. Assigns to the Aloe Reimbursements vendor (3229).', input_schema: { type: 'object', properties: { property_id: { type: 'string' }, unit_id: { type: 'string' }, lease_id: { type: 'string' }, description: { type: 'string', description: 'Full description including appliance type, brand, model, symptom, cause, age, and vendor recommendation' } }, required: ['property_id','description'] } },
   { name: 'get_vendor_for_trade', description: 'Get the right vendor for a trade and location from the Aloe vendor directory. Always use this BEFORE rv_dispatch_vendor to find the correct vendor for the job. Pass the trade (e.g. HVAC, Plumbing, Garage Doors, Cleaning, Handyman, Roofing, Landscaping, Appliances) and the city/zone (e.g. Maricopa, Chandler, Gilbert, Scottsdale, Mesa, Phoenix). Returns the recommended vendor name, phone, and any important notes.', input_schema: { type: 'object', properties: { trade: { type: 'string', description: 'Trade category e.g. HVAC, Plumbing, Garage Doors, Cleaning, Handyman, Roofing, Landscaping, Appliances, Pest Control, Electrical' }, zone: { type: 'string', description: 'City or zone e.g. Maricopa, Chandler, Gilbert, Scottsdale, Mesa, Phoenix, East Valley' } }, required: ['trade'] } },
   { name: 'rv_search_vendor', description: 'Look up a vendor in Rentvine by name to get their Rentvine contact ID for assigning to work orders.', input_schema: { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] } },
   { name: 'aptly_add_comment', description: 'Add a comment to a work order card.', input_schema: { type: 'object', properties: { card_id: { type: 'string' }, content: { type: 'string' } }, required: ['card_id','content'] } },
@@ -537,6 +540,49 @@ async function executeAriTool(toolName, input) {
           } catch(e) { return { name: o.name, phone: null, email: null }; }
         }));
         return { owners: resolved };
+      }
+      case 'rv_get_work_order_by_number': {
+        try {
+          const results = await rvFetch('/maintenance/work-orders', { pageSize: 50, page: 1, search: input.wo_number });
+          const rows = Array.isArray(results) ? results : [];
+          const found = rows.find(r => String(r.workOrder.workOrderNumber) === String(input.wo_number));
+          if (!found) return { error: 'WO not found', wo_number: input.wo_number };
+          const wo = found.workOrder;
+          return { workOrderID: wo.workOrderID, propertyID: wo.propertyID, unitID: wo.unitID, leaseID: wo.leaseID, workOrderStatusID: wo.workOrderStatusID };
+        } catch(e) { return { error: e.message }; }
+      }
+      case 'rv_close_work_order': {
+        const r = await fetch(`${RENTVINE_BASE}/maintenance/work-orders/${input.rv_wo_id}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workOrderStatusID: '2' }),
+        });
+        const data = await r.json();
+        if (!r.ok) return { error: `Rentvine ${r.status}`, detail: JSON.stringify(data).slice(0,200) };
+        return { success: true, workOrderID: input.rv_wo_id, status: 'Completed' };
+      }
+      case 'rv_create_replacement_work_order': {
+        const REIMBURSEMENTS_VENDOR_ID = '3229';
+        const body = {
+          propertyID: String(input.property_id),
+          description: input.description,
+          priorityID: '3',
+          workOrderStatusID: '1',
+          vendorContactID: REIMBURSEMENTS_VENDOR_ID,
+          isSharedWithTenant: false,
+          isSharedWithOwner: false,
+        };
+        if (input.unit_id) body.unitID = String(input.unit_id);
+        if (input.lease_id) body.leaseID = String(input.lease_id);
+        const r = await fetch(`${RENTVINE_BASE}/maintenance/work-orders`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${RENTVINE_AUTH}`, 'X-Rentvine-Account': process.env.RENTVINE_ACCOUNT, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await r.json();
+        if (!r.ok) return { error: `Rentvine ${r.status}`, detail: JSON.stringify(data).slice(0,200) };
+        const wo = data.workOrder || data;
+        return { success: true, workOrderID: wo.workOrderID, workOrderNumber: wo.workOrderNumber };
       }
       default: return { error: `Unknown Ari tool: ${toolName}` };
     }

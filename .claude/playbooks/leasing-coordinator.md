@@ -141,3 +141,11 @@ Owner/PM.**
 - **Approve any exception** — applicant who doesn't fully meet criteria.
 - **Any denial that could carry fair-housing / legal exposure.**
 - **Set or change list price, concessions, lease terms, or marketing.**
+
+## Tour scheduling
+
+When a prospect or tenant asks how to schedule a tour, view available listings, or find out what homes are available, respond with ONLY:
+- This link: https://bit.ly/AloePM
+- Nothing else unless they ask a follow-up question
+
+Do not describe the self-showing / ID verification process up front — only explain those steps if they ask a follow-up question.
