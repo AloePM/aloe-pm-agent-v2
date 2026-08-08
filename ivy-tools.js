@@ -483,6 +483,43 @@ const TOOL_DEFS = [
         aptlyUnitId: match._id || match.id
       });
     }
+  },
+  {
+    name: 'generate_codebox_code',
+    description: 'Generate a one-time CodeBox access code for a showing at a CodeBox-lockbox property. Requires the property\'s CodeBox Serial Number (from get_lockbox_info) and the showing date. Only use for properties where get_lockbox_info confirms Lockbox Type is Codebox.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        codeboxSerialNumber: { type: 'string', description: 'The CodeBox serial number for this property, from get_lockbox_info' },
+        dateOfShowing: { type: 'string', description: 'Date of the showing in MM/DD/YYYY format' },
+        name: { type: 'string', description: 'Name of the prospect the code is for (optional)' }
+      },
+      required: ['codeboxSerialNumber', 'dateOfShowing']
+    },
+    handler: async (input) => {
+      const authR = await fetch('https://api02.codeboxinc.com/authentication', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Username: process.env.CODEBOX_USERNAME, Password: process.env.CODEBOX_PASSWORD })
+      });
+      if (!authR.ok) return JSON.stringify({ error: `CodeBox authentication failed: ${authR.status}` });
+      const { AuthToken } = await authR.json();
+      const showingR = await fetch('https://api02.codeboxinc.com/showing', {
+        method: 'POST',
+        headers: { 'X-Auth-Token': AuthToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          SerialNumber: input.codeboxSerialNumber,
+          DateOfShowing: input.dateOfShowing,
+          ...(input.name ? { Name: input.name } : {})
+        })
+      });
+      if (!showingR.ok) {
+        const detail = await showingR.text();
+        return JSON.stringify({ error: `CodeBox code generation failed: ${showingR.status}`, detail });
+      }
+      const code = await showingR.json();
+      return JSON.stringify({ success: true, code, serialNumber: input.codeboxSerialNumber, dateOfShowing: input.dateOfShowing });
+    }
   }
 ];
 
